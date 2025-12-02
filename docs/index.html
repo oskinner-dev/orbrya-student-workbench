@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbrya Student Workbench - Game Development Platform</title>
+    <title>Orbrya Cube Demo - Student Workbench</title>
     <style>
         /* ============================================
            GLOBAL RESET & BASE STYLES
@@ -24,7 +24,7 @@
         }
 
         /* ============================================
-           CANVAS LAYER (3D World - Three.js)
+           CANVAS LAYER (3D World)
         ============================================ */
         #canvas-container {
             position: absolute;
@@ -33,4 +33,3420 @@
             width: 100%;
             height: 100%;
             z-index: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         }
+
+        /* ============================================
+           UI OVERLAY CONTAINER
+        ============================================ */
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #ui-overlay > * {
+            pointer-events: auto;
+        }
+
+        /* ============================================
+           GLASSMORPHISM UTILITIES
+        ============================================ */
+        .glass {
+            background: rgba(26, 26, 46, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-light {
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* ============================================
+           ZONE A: THE PALETTE (LEFT SIDEBAR)
+        ============================================ */
+        #palette-sidebar {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            padding: 12px 8px;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .palette-item {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .palette-item:hover {
+            transform: scale(1.15);
+            background: rgba(166, 74, 201, 0.2);
+            border-color: #a64ac9;
+            box-shadow: 0 0 20px rgba(166, 74, 201, 0.4);
+        }
+
+        .palette-item.active {
+            background: rgba(166, 74, 201, 0.3);
+            border: 2px solid #a64ac9;
+            box-shadow: 0 0 24px rgba(166, 74, 201, 0.6), inset 0 0 12px rgba(166, 74, 201, 0.3);
+        }
+
+        .palette-item:active {
+            transform: scale(1.05);
+        }
+
+        /* Category labels on hover */
+        .palette-item::after {
+            content: attr(data-label);
+            position: absolute;
+            left: 90px;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid rgba(166, 74, 201, 0.3);
+        }
+
+        .palette-item:hover::after {
+            opacity: 1;
+        }
+
+        /* ============================================
+           ZONE B: THE BUDGET BAR (TOP CENTER)
+        ============================================ */
+        #budget-bar-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            padding: 16px 24px;
+            border-radius: 20px;
+        }
+
+        .budget-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .budget-percentage {
+            font-size: 18px;
+            font-weight: 700;
+            color: #a64ac9;
+        }
+
+        .budget-bar-track {
+            width: 100%;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .budget-bar-fill {
+            height: 100%;
+            width: 15%;
+            background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+            border-radius: 14px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated shimmer effect */
+        .budget-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Color states */
+        .budget-bar-fill.warning {
+            background: linear-gradient(90deg, #facc15 0%, #eab308 100%);
+        }
+
+        .budget-bar-fill.danger {
+            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            animation: pulse-danger 1s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Budget warning text */
+        .budget-warning {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .budget-warning.show {
+            opacity: 1;
+        }
+
+        .budget-warning.warning {
+            color: #facc15;
+        }
+
+        .budget-warning.danger {
+            color: #ef4444;
+        }
+
+        /* ============================================
+           ZONE C: THE SOCRATIC TUTOR (BOTTOM RIGHT)
+        ============================================ */
+        #tutor-container {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        #tutor-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a64ac9 0%, #8b3daf 100%);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(166, 74, 201, 0.4);
+            position: relative;
+        }
+
+        #tutor-avatar:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 32px rgba(166, 74, 201, 0.6);
+        }
+
+        #tutor-avatar.active {
+            transform: scale(0.95);
+        }
+
+        /* Notification pulse */
+        #tutor-avatar::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 3px solid #1a1a2e;
+            animation: pulse-notification 2s infinite;
+        }
+
+        @keyframes pulse-notification {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        #tutor-avatar.chat-open::before {
+            display: none;
+        }
+
+        /* Chat Bubble */
+        #tutor-chat {
+            max-width: 380px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #tutor-chat.show {
+            max-height: 500px;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            padding: 20px;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .chat-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #a64ac9;
+        }
+
+        .chat-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .chat-close:hover {
+            color: #ffffff;
+        }
+
+        /* Chat Messages Container */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            max-height: 300px;
+            padding-right: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(166, 74, 201, 0.5);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(166, 74, 201, 0.7);
+        }
+
+        .message {
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 85%;
+        }
+
+        .message.user .message-bubble {
+            background: rgba(166, 74, 201, 0.3);
+            border: 1px solid rgba(166, 74, 201, 0.5);
+            color: #ffffff;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.bot .message-bubble {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .message.bot.thinking .message-bubble {
+            background: rgba(166, 74, 201, 0.2);
+            border: 1px solid rgba(166, 74, 201, 0.3);
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #a64ac9;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .chat-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #a64ac9;
+            box-shadow: 0 0 0 2px rgba(166, 74, 201, 0.2);
+        }
+
+        .chat-send-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #a64ac9 0%, #8b3daf 100%);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(166, 74, 201, 0.5);
+        }
+
+        .chat-send-btn:active {
+            transform: translateY(0);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quick Reply Suggestions */
+        .quick-replies {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .quick-reply-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(166, 74, 201, 0.4);
+            border-radius: 16px;
+            background: rgba(166, 74, 201, 0.1);
+            color: #a64ac9;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .quick-reply-btn:hover {
+            background: rgba(166, 74, 201, 0.2);
+            border-color: #a64ac9;
+            transform: translateY(-1px);
+        }
+
+        /* ============================================
+           HOTBAR TOOLBAR (BOTTOM CENTER)
+        ============================================ */
+        #hotbar-toolbar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 16px;
+            border-radius: 16px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .hotbar-item {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            user-select: none;
+        }
+
+        .hotbar-item:hover {
+            transform: translateY(-4px);
+            background: rgba(166, 74, 201, 0.15);
+            border-color: #a64ac9;
+            box-shadow: 0 6px 20px rgba(166, 74, 201, 0.3);
+        }
+
+        .hotbar-item.active {
+            background: rgba(166, 74, 201, 0.25);
+            border: 2px solid #a64ac9;
+            box-shadow: 0 0 20px rgba(166, 74, 201, 0.5), inset 0 0 10px rgba(166, 74, 201, 0.2);
+            transform: translateY(-6px) scale(1.05);
+        }
+
+        .hotbar-item.active::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 14px;
+            border: 2px solid #a64ac9;
+            opacity: 0.5;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+        }
+
+        .hotbar-icon {
+            font-size: 28px;
+            margin-bottom: 2px;
+        }
+
+        .hotbar-key {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            position: absolute;
+            bottom: 4px;
+        }
+
+        .hotbar-item.active .hotbar-key {
+            color: #a64ac9;
+            background: rgba(166, 74, 201, 0.3);
+        }
+
+        /* Tooltip on hover */
+        .hotbar-item::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 46, 0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid rgba(166, 74, 201, 0.3);
+        }
+
+        .hotbar-item:hover::after {
+            opacity: 1;
+        }
+
+        /* Divider between tool groups */
+        .hotbar-divider {
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 4px;
+        }
+
+        /* ============================================
+           SAVE/LOAD PANEL (TOP LEFT)
+        ============================================ */
+        #save-load-panel {
+            position: absolute;
+            top: 20px;
+            left: 120px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            min-width: 280px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #save-load-panel.show {
+            max-height: 600px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #a64ac9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .panel-close:hover {
+            color: #ffffff;
+        }
+
+        .project-info {
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .text-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .text-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .text-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #a64ac9;
+            box-shadow: 0 0 0 2px rgba(166, 74, 201, 0.2);
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #a64ac9;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .panel-button {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .panel-button.primary {
+            background: linear-gradient(135deg, #a64ac9 0%, #8b3daf 100%);
+            color: white;
+            border: 1px solid transparent;
+        }
+
+        .panel-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(166, 74, 201, 0.4);
+        }
+
+        .panel-button.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .panel-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .panel-button:active {
+            transform: translateY(0);
+        }
+
+        .recent-projects {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .recent-projects-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .project-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-item:hover {
+            background: rgba(166, 74, 201, 0.15);
+            border-color: #a64ac9;
+            transform: translateX(4px);
+        }
+
+        .project-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .project-date {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Save/Load toggle button */
+        #toggle-save-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: rgba(26, 26, 46, 0.75);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            gap: 4px;
+        }
+
+        #toggle-save-panel:hover {
+            transform: scale(1.05);
+            background: rgba(166, 74, 201, 0.2);
+            border-color: #a64ac9;
+            box-shadow: 0 0 20px rgba(166, 74, 201, 0.3);
+        }
+
+        #toggle-save-panel .icon {
+            font-size: 32px;
+        }
+
+        #toggle-save-panel .label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ============================================
+           CODING INTERFACE PANEL (CENTER-RIGHT)
+        ============================================ */
+        #coding-panel {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        #coding-panel.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .code-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .code-panel-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #a64ac9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .code-close:hover {
+            color: #ffffff;
+        }
+
+        /* Script Tabs */
+        .script-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px 0;
+            background: rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .script-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .script-tabs::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .script-tabs::-webkit-scrollbar-thumb {
+            background: rgba(166, 74, 201, 0.5);
+            border-radius: 2px;
+        }
+
+        .script-tab {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .script-tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .script-tab.active {
+            background: rgba(26, 26, 46, 0.9);
+            border-color: #a64ac9;
+            color: #a64ac9;
+        }
+
+        .script-tab.new {
+            font-size: 18px;
+            padding: 4px 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .script-tab.new:hover {
+            color: #a64ac9;
+        }
+
+        /* Code Editor Area */
+        .code-editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: rgba(26, 26, 46, 0.9);
+        }
+
+        .line-numbers {
+            padding: 16px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: right;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .code-editor {
+            flex: 1;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ffffff;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            overflow-y: auto;
+            white-space: pre;
+            overflow-wrap: normal;
+        }
+
+        .code-editor::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .code-editor::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .code-editor::-webkit-scrollbar-thumb {
+            background: rgba(166, 74, 201, 0.5);
+            border-radius: 4px;
+        }
+
+        /* Syntax Highlighting (C# style) */
+        .code-preview {
+            flex: 1;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-y: auto;
+            white-space: pre;
+        }
+
+        .code-preview::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .code-preview::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .code-preview::-webkit-scrollbar-thumb {
+            background: rgba(166, 74, 201, 0.5);
+            border-radius: 4px;
+        }
+
+        /* C# Syntax Colors */
+        .syntax-keyword { color: #569cd6; }      /* Blue - C# keywords */
+        .syntax-type { color: #4ec9b0; }         /* Teal - Types/Classes */
+        .syntax-function { color: #dcdcaa; }     /* Yellow - Methods */
+        .syntax-string { color: #ce9178; }       /* Orange - Strings */
+        .syntax-number { color: #b5cea8; }       /* Light green - Numbers */
+        .syntax-comment { color: #6a9955; font-style: italic; } /* Green - Comments */
+        .syntax-variable { color: #9cdcfe; }     /* Light blue - Variables */
+        .syntax-modifier { color: #569cd6; }     /* Blue - public/private */
+        .syntax-namespace { color: #dcdcaa; }    /* Yellow - Using/namespace */
+
+        /* Console Output */
+        .console-container {
+            height: 150px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .console-header span {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-clear {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s;
+        }
+
+        .console-clear:hover {
+            color: #ffffff;
+        }
+
+        .console-output {
+            flex: 1;
+            padding: 8px 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-y: auto;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .console-output::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-output::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .console-output::-webkit-scrollbar-thumb {
+            background: rgba(166, 74, 201, 0.5);
+            border-radius: 3px;
+        }
+
+        .console-line {
+            margin-bottom: 4px;
+        }
+
+        .console-line.log { color: #ffffff; }
+        .console-line.warn { color: #facc15; }
+        .console-line.error { color: #ef4444; }
+        .console-line.success { color: #4ade80; }
+
+        /* Code Actions Bar */
+        .code-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .code-action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-action-btn.run {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .code-action-btn.run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+        }
+
+        .code-action-btn.stop {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .code-action-btn.stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .code-action-btn.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .code-action-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Code Snippets Dropdown */
+        .snippets-dropdown {
+            position: relative;
+        }
+
+        .snippets-menu {
+            position: absolute;
+            bottom: 50px;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            border: 1px solid rgba(166, 74, 201, 0.3);
+            border-radius: 8px;
+            padding: 8px;
+            min-width: 200px;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        .snippets-menu.show {
+            display: block;
+        }
+
+        .snippet-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .snippet-item:hover {
+            background: rgba(166, 74, 201, 0.2);
+            color: #a64ac9;
+        }
+
+        /* ============================================
+           EXPORT MODAL (IDE-Style Dialog)
+        ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-dialog {
+            background: linear-gradient(145deg, #1e1e2e 0%, #2a2a3e 100%);
+            border-radius: 16px;
+            padding: 0;
+            min-width: 450px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 
+                        0 0 0 1px rgba(166, 74, 201, 0.2);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(166, 74, 201, 0.2) 0%, rgba(166, 74, 201, 0.1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .modal-icon.success {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title-section {
+            flex: 1;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            margin-bottom: 4px;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .modal-message {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 24px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 16px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .progress-percentage {
+            font-weight: 700;
+            color: #a64ac9;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #a64ac9 0%, #c76dd8 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmerProgress 1.5s infinite;
+        }
+
+        @keyframes shimmerProgress {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 200%;
+            }
+        }
+
+        /* Success State */
+        .success-message {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .success-icon-inline {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(74, 222, 128, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            color: #4ade80;
+        }
+
+        .success-text {
+            flex: 1;
+        }
+
+        .success-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #4ade80;
+            margin: 0 0 4px 0;
+        }
+
+        .success-description {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 18px;
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-button.primary {
+            background: linear-gradient(135deg, #a64ac9 0%, #8b3daf 100%);
+            color: white;
+        }
+
+        .modal-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(166, 74, 201, 0.4);
+        }
+
+        .modal-button.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .modal-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .modal-button:active {
+            transform: translateY(0);
+        }
+
+        /* Export Button in Toolbar */
+        .export-button {
+            position: absolute;
+            top: 20px;
+            right: 180px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #a64ac9 0%, #8b3daf 100%);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(166, 74, 201, 0.3);
+        }
+
+        .export-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(166, 74, 201, 0.5);
+        }
+
+        .export-button:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .modal-dialog {
+                min-width: 90vw;
+                margin: 20px;
+            }
+
+            .export-button {
+                right: 10px;
+                top: 100px;
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+
+        /* ============================================
+           DEBUG / TEST CONTROLS (TOP RIGHT)
+        ============================================ */
+        #debug-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .debug-button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .debug-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .debug-button:active {
+            transform: translateY(0);
+        }
+
+        /* ============================================
+           RESPONSIVE ADJUSTMENTS
+        ============================================ */
+        @media (max-width: 768px) {
+            #palette-sidebar {
+                left: 10px;
+                width: 64px;
+                padding: 8px 4px;
+                gap: 12px;
+            }
+
+            .palette-item {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+            }
+
+            #budget-bar-container {
+                width: 300px;
+                padding: 12px 16px;
+            }
+
+            #tutor-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
+
+            #tutor-chat {
+                max-width: 280px;
+            }
+
+            /* Hotbar adjustments */
+            #hotbar-toolbar {
+                bottom: 20px;
+                padding: 8px 12px;
+                gap: 6px;
+            }
+
+            .hotbar-item {
+                width: 52px;
+                height: 52px;
+            }
+
+            .hotbar-icon {
+                font-size: 24px;
+            }
+
+            .hotbar-divider {
+                height: 32px;
+            }
+
+            /* Save panel adjustments */
+            #toggle-save-panel {
+                width: 60px;
+                height: 60px;
+                top: 15px;
+                left: 15px;
+            }
+
+            #toggle-save-panel .icon {
+                font-size: 24px;
+            }
+
+            #toggle-save-panel .label {
+                font-size: 9px;
+            }
+
+            #save-load-panel {
+                left: 90px;
+                top: 15px;
+                min-width: 260px;
+            }
+            
+            /* Coding panel adjustments */
+            #coding-panel {
+                width: 95vw;
+                right: 2.5vw;
+                max-height: 70vh;
+            }
+            
+            .script-tabs {
+                font-size: 11px;
+            }
+            
+            .script-tab {
+                padding: 6px 12px;
+            }
+            
+            .console-container {
+                height: 120px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            #hotbar-toolbar {
+                flex-wrap: wrap;
+                max-width: 90%;
+            }
+
+            .hotbar-item {
+                width: 48px;
+                height: 48px;
+            }
+
+            .hotbar-icon {
+                font-size: 22px;
+            }
+
+            .hotbar-key {
+                font-size: 8px;
+            }
+            
+            /* Coding panel mobile */
+            #coding-panel {
+                width: 100vw;
+                right: 0;
+                top: 10vh;
+                transform: none;
+                max-height: 85vh;
+                border-radius: 16px 16px 0 0;
+            }
+            
+            .code-editor,
+            .code-preview {
+                font-size: 12px;
+            }
+            
+            .console-container {
+                height: 100px;
+            }
+            
+            .code-actions {
+                flex-wrap: wrap;
+            }
+            
+            .code-action-btn {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         THE 3D CANVAS (Your C# WASM + Three.js scene)
+    ============================================ -->
+    <canvas id="canvas-container"></canvas>
+
+    <!-- ============================================
+         THE UI OVERLAY
+    ============================================ -->
+    <div id="ui-overlay">
+        
+        <!-- ZONE A: THE PALETTE (Left Sidebar) -->
+        <div id="palette-sidebar" class="glass">
+            <div class="palette-item" data-category="nature" data-label="Nature">🌲</div>
+            <div class="palette-item" data-category="structures" data-label="Structures">🏰</div>
+            <div class="palette-item" data-category="scifi" data-label="Sci-Fi">🚀</div>
+            <div class="palette-item" data-category="logic" data-label="Logic">⚡</div>
+        </div>
+
+        <!-- ZONE B: THE BUDGET BAR (Top Center) -->
+        <div id="budget-bar-container" class="glass">
+            <div class="budget-label">
+                <span>Memory Budget</span>
+                <span class="budget-percentage">15%</span>
+            </div>
+            <div class="budget-bar-track">
+                <div class="budget-bar-fill" id="budget-bar-fill"></div>
+            </div>
+            <div class="budget-warning" id="budget-warning"></div>
+        </div>
+
+        <!-- ZONE C: THE SOCRATIC TUTOR (Bottom Right) -->
+        <div id="tutor-container">
+            <div id="tutor-chat" class="glass">
+                <div class="chat-header">
+                    <h3>🤖 Learning Assistant</h3>
+                    <button class="chat-close" id="chat-close">✕</button>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+                
+                <div class="quick-replies" id="quick-replies">
+                    <!-- Quick reply buttons will appear here -->
+                </div>
+                
+                <div class="chat-input-container">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chat-input" 
+                        placeholder="Ask me anything..."
+                        autocomplete="off"
+                    />
+                    <button class="chat-send-btn" id="chat-send-btn">
+                        ➤
+                    </button>
+                </div>
+            </div>
+            <div id="tutor-avatar">🤖</div>
+        </div>
+
+        <!-- HOTBAR TOOLBAR (Bottom Center - Game Style) -->
+        <div id="hotbar-toolbar" class="glass">
+            <div class="hotbar-item active" data-tool="select" data-tooltip="Select & Move">
+                <div class="hotbar-icon">👆</div>
+                <div class="hotbar-key">1</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="rotate" data-tooltip="Rotate">
+                <div class="hotbar-icon">🔄</div>
+                <div class="hotbar-key">2</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="scale" data-tooltip="Scale">
+                <div class="hotbar-icon">↔️</div>
+                <div class="hotbar-key">3</div>
+            </div>
+            
+            <div class="hotbar-divider"></div>
+            
+            <div class="hotbar-item" data-tool="paint" data-tooltip="Paint & Color">
+                <div class="hotbar-icon">🎨</div>
+                <div class="hotbar-key">4</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="duplicate" data-tooltip="Duplicate">
+                <div class="hotbar-icon">📑</div>
+                <div class="hotbar-key">5</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="delete" data-tooltip="Delete">
+                <div class="hotbar-icon">🗑️</div>
+                <div class="hotbar-key">6</div>
+            </div>
+            
+            <div class="hotbar-divider"></div>
+            
+            <div class="hotbar-item" data-tool="grid" data-tooltip="Snap to Grid">
+                <div class="hotbar-icon">⊞</div>
+                <div class="hotbar-key">7</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="undo" data-tooltip="Undo">
+                <div class="hotbar-icon">↶</div>
+                <div class="hotbar-key">Z</div>
+            </div>
+            
+            <div class="hotbar-item" data-tool="play" data-tooltip="Play / Test">
+                <div class="hotbar-icon">▶️</div>
+                <div class="hotbar-key">P</div>
+            </div>
+        </div>
+
+        <!-- SAVE/LOAD PANEL TOGGLE BUTTON -->
+        <div id="toggle-save-panel" class="glass">
+            <div class="icon">💾</div>
+            <div class="label">PROJECT</div>
+        </div>
+
+        <!-- SAVE/LOAD PANEL -->
+        <div id="save-load-panel" class="glass">
+            <div class="panel-header">
+                <h3>💾 Project Manager</h3>
+                <button class="panel-close" id="panel-close">✕</button>
+            </div>
+            
+            <div class="project-info">
+                <div class="input-group">
+                    <label class="input-label">Project Name</label>
+                    <input 
+                        type="text" 
+                        class="text-input" 
+                        id="project-name" 
+                        placeholder="My Awesome World"
+                        value="Untitled Project"
+                    />
+                </div>
+                
+                <div class="project-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Objects</div>
+                        <div class="stat-value" id="object-count">12</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Last Saved</div>
+                        <div class="stat-value" id="last-saved" style="font-size: 12px;">Never</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="panel-button primary" id="save-project">
+                    💾 Save
+                </button>
+                <button class="panel-button secondary" id="save-as-project">
+                    📝 Save As
+                </button>
+            </div>
+            
+            <div class="button-group">
+                <button class="panel-button secondary" id="load-project">
+                    📂 Load
+                </button>
+                <button class="panel-button secondary" id="export-project">
+                    📤 Export
+                </button>
+            </div>
+            
+            <div class="recent-projects">
+                <div class="recent-projects-header">Recent Projects</div>
+                <div class="project-item" data-project="demo1">
+                    <div>
+                        <div class="project-name">Space Station Demo</div>
+                        <div class="project-date">2 hours ago</div>
+                    </div>
+                </div>
+                <div class="project-item" data-project="demo2">
+                    <div>
+                        <div class="project-name">Forest Scene</div>
+                        <div class="project-date">Yesterday</div>
+                    </div>
+                </div>
+                <div class="project-item" data-project="demo3">
+                    <div>
+                        <div class="project-name">City Builder Practice</div>
+                        <div class="project-date">3 days ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPORT BUTTON (Top Toolbar) -->
+        <button class="export-button" id="export-button">
+            📦 Export to Unity
+        </button>
+
+        <!-- DEBUG CONTROLS (Remove in production) -->
+        <div id="debug-controls" class="glass-light">
+            <button class="debug-button" id="add-tree">➕ Add Tree (↑ Budget)</button>
+            <button class="debug-button" id="reset-budget">🔄 Reset Budget</button>
+        </div>
+
+        <!-- EXPORT MODAL -->
+        <div class="modal-overlay" id="export-modal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-icon" id="modal-icon">📦</div>
+                    <div class="modal-title-section">
+                        <h3 class="modal-title" id="modal-title">Exporting Project</h3>
+                        <p class="modal-subtitle" id="modal-subtitle">Preparing Unity package...</p>
+                    </div>
+                </div>
+                
+                <div class="modal-body" id="modal-body">
+                    <!-- Progress State (Initial) -->
+                    <div id="progress-state">
+                        <div class="modal-message">
+                            Compiling C# scripts, bundling assets, and packaging for Unity...
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span id="progress-task">Compiling for Unity...</span>
+                                <span class="progress-percentage" id="progress-percentage">0%</span>
+                            </div>
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Success State (Hidden Initially) -->
+                    <div id="success-state" style="display: none;">
+                        <div class="success-message">
+                            <div class="success-icon-inline">✓</div>
+                            <div class="success-text">
+                                <h4 class="success-title">Export Complete!</h4>
+                                <p class="success-description">Your project has been successfully packaged for Unity.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <span id="export-filename">Project_v1.unitypackage downloaded</span>
+                        </div>
+                        
+                        <div class="modal-message">
+                            Import this package into Unity by going to:<br>
+                            <strong>Assets → Import Package → Custom Package</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" id="modal-footer">
+                    <!-- Progress footer (Initial) -->
+                    <div id="progress-footer" style="width: 100%; display: flex; justify-content: flex-end;">
+                        <button class="modal-button secondary" id="cancel-export">Cancel</button>
+                    </div>
+                    
+                    <!-- Success footer (Hidden Initially) -->
+                    <div id="success-footer" style="display: none; width: 100%; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button class="modal-button secondary" id="open-folder">Open Folder</button>
+                        <button class="modal-button primary" id="close-modal">Done</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CODING INTERFACE PANEL -->
+        <div id="coding-panel" class="glass">
+            <div class="code-panel-header">
+                <h3>⚡ Logic Editor</h3>
+                <button class="code-close" id="code-close">✕</button>
+            </div>
+            
+            <!-- Script Tabs -->
+            <div class="script-tabs">
+                <div class="script-tab active" data-script="ship">ShipController.cs</div>
+                <div class="script-tab" data-script="collision">CollisionDetector.cs</div>
+                <div class="script-tab" data-script="spawner">ObjectSpawner.cs</div>
+                <div class="script-tab new" title="New Script">+</div>
+            </div>
+            
+            <!-- Code Editor -->
+            <div class="code-editor-container">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <div class="code-preview" id="code-display">
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">Orbrya.Engine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">ShipController</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-comment">// Change this value to control the ship</span>
+    <span class="syntax-modifier">public</span> <span class="syntax-type">float</span> <span class="syntax-variable">RotationSpeed</span> = <span class="syntax-number">0.05f</span>;
+
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-comment">// Apply rotation based on speed</span>
+        <span class="syntax-variable">transform</span>.<span class="syntax-function">Rotate</span>(<span class="syntax-number">0</span>, <span class="syntax-variable">RotationSpeed</span>, <span class="syntax-number">0</span>);
+    }
+}
+                </div>
+            </div>
+            
+            <!-- Console Output -->
+            <div class="console-container">
+                <div class="console-header">
+                    <span>Console</span>
+                    <button class="console-clear" id="console-clear">Clear</button>
+                </div>
+                <div class="console-output" id="console-output">
+                    <div class="console-line success">▶ Ready to run code!</div>
+                    <div class="console-line log">> Try clicking the "Run Code" button</div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="code-actions">
+                <button class="code-action-btn run" id="run-code">
+                    ▶ Run Code
+                </button>
+                <button class="code-action-btn stop" id="stop-code" style="display: none;">
+                    ⏹ Stop
+                </button>
+                <div class="snippets-dropdown">
+                    <button class="code-action-btn secondary" id="snippets-btn">
+                        📋 Snippets
+                    </button>
+                    <div class="snippets-menu" id="snippets-menu">
+                        <div class="snippet-item" data-snippet="ship">Ship Controller</div>
+                        <div class="snippet-item" data-snippet="collision">Collision Detector</div>
+                        <div class="snippet-item" data-snippet="spawner">Object Spawner</div>
+                        <div class="snippet-item" data-snippet="movement">Player Movement</div>
+                        <div class="snippet-item" data-snippet="timer">Game Timer</div>
+                        <div class="snippet-item" data-snippet="input">Input Handler</div>
+                    </div>
+                </div>
+                <button class="code-action-btn secondary" id="save-code">
+                    💾 Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        let currentBudget = 15; // Starting at 15%
+        const MAX_BUDGET = 100;
+        let currentTool = 'select'; // Default tool
+        let objectCount = 12; // Mock object count
+        let projectData = {
+            name: 'Untitled Project',
+            objects: [],
+            lastSaved: null
+        };
+        
+        // ============================================
+        // DOM REFERENCES
+        // ============================================
+        const budgetFill = document.getElementById('budget-bar-fill');
+        const budgetPercentage = document.querySelector('.budget-percentage');
+        const budgetWarning = document.getElementById('budget-warning');
+        const tutorAvatar = document.getElementById('tutor-avatar');
+        const tutorChat = document.getElementById('tutor-chat');
+        const chatClose = document.getElementById('chat-close');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const quickRepliesContainer = document.getElementById('quick-replies');
+        const paletteItems = document.querySelectorAll('.palette-item');
+        const addTreeBtn = document.getElementById('add-tree');
+        const resetBudgetBtn = document.getElementById('reset-budget');
+        
+        // Hotbar elements
+        const hotbarItems = document.querySelectorAll('.hotbar-item');
+        
+        // Save/Load panel elements
+        const toggleSavePanel = document.getElementById('toggle-save-panel');
+        const saveLoadPanel = document.getElementById('save-load-panel');
+        const panelClose = document.getElementById('panel-close');
+        const projectNameInput = document.getElementById('project-name');
+        const objectCountDisplay = document.getElementById('object-count');
+        const lastSavedDisplay = document.getElementById('last-saved');
+        const saveProjectBtn = document.getElementById('save-project');
+        const saveAsProjectBtn = document.getElementById('save-as-project');
+        const loadProjectBtn = document.getElementById('load-project');
+        const exportProjectBtn = document.getElementById('export-project');
+        const projectItems = document.querySelectorAll('.project-item');
+        
+        // Export modal elements
+        const exportButton = document.getElementById('export-button');
+        const exportModal = document.getElementById('export-modal');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubtitle = document.getElementById('modal-subtitle');
+        const modalBody = document.getElementById('modal-body');
+        const progressState = document.getElementById('progress-state');
+        const successState = document.getElementById('success-state');
+        const progressFill = document.getElementById('progress-bar-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressTask = document.getElementById('progress-task');
+        const progressFooter = document.getElementById('progress-footer');
+        const successFooter = document.getElementById('success-footer');
+        const cancelExportBtn = document.getElementById('cancel-export');
+        const closeModalBtn = document.getElementById('close-modal');
+        const openFolderBtn = document.getElementById('open-folder');
+
+        // ============================================
+        // EXPORT MODAL LOGIC
+        // ============================================
+        
+        let exportInProgress = false;
+        let exportInterval = null;
+
+        function openExportModal() {
+            exportModal.classList.add('show');
+            resetModalToProgress();
+            startExport();
+        }
+
+        function closeExportModal() {
+            exportModal.classList.remove('show');
+            if (exportInterval) {
+                clearInterval(exportInterval);
+                exportInterval = null;
+            }
+            exportInProgress = false;
+        }
+
+        function resetModalToProgress() {
+            // Reset to progress state
+            modalIcon.textContent = '📦';
+            modalIcon.classList.remove('success');
+            modalTitle.textContent = 'Exporting Project';
+            modalSubtitle.textContent = 'Preparing Unity package...';
+            
+            progressState.style.display = 'block';
+            successState.style.display = 'none';
+            progressFooter.style.display = 'flex';
+            successFooter.style.display = 'none';
+            
+            progressFill.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            progressTask.textContent = 'Compiling for Unity...';
+        }
+
+        function startExport() {
+            if (exportInProgress) return;
+            
+            exportInProgress = true;
+            let progress = 0;
+            const duration = 2000; // 2 seconds
+            const steps = 60; // 60 steps for smooth animation
+            const increment = 100 / steps;
+            const intervalTime = duration / steps;
+
+            // Progress tasks to cycle through
+            const tasks = [
+                'Compiling C# scripts...',
+                'Bundling assets...',
+                'Packaging materials...',
+                'Generating metadata...',
+                'Creating Unity package...',
+                'Finalizing export...'
+            ];
+            let currentTaskIndex = 0;
+
+            exportInterval = setInterval(() => {
+                progress += increment;
+                
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(exportInterval);
+                    exportInterval = null;
+                    
+                    // Update to 100%
+                    progressFill.style.width = '100%';
+                    progressPercentage.textContent = '100%';
+                    progressTask.textContent = 'Complete!';
+                    
+                    // Show success after brief pause
+                    setTimeout(() => {
+                        showSuccessState();
+                    }, 300);
+                } else {
+                    // Update progress
+                    progressFill.style.width = progress + '%';
+                    progressPercentage.textContent = Math.floor(progress) + '%';
+                    
+                    // Update task text periodically
+                    const taskProgress = Math.floor((progress / 100) * tasks.length);
+                    if (taskProgress !== currentTaskIndex && taskProgress < tasks.length) {
+                        currentTaskIndex = taskProgress;
+                        progressTask.textContent = tasks[currentTaskIndex];
+                    }
+                }
+            }, intervalTime);
+        }
+
+        function showSuccessState() {
+            // Update icon and title
+            modalIcon.textContent = '✓';
+            modalIcon.classList.add('success');
+            modalTitle.textContent = 'Export Complete';
+            modalSubtitle.textContent = 'Ready to import into Unity';
+            
+            // Switch states
+            progressState.style.display = 'none';
+            successState.style.display = 'block';
+            progressFooter.style.display = 'none';
+            successFooter.style.display = 'flex';
+            
+            exportInProgress = false;
+            
+            // Generate filename with timestamp
+            const projectName = projectNameInput.value || 'Project';
+            const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const filename = `${projectName}_v${timestamp}.unitypackage`;
+            document.getElementById('export-filename').textContent = filename + ' downloaded';
+            
+            // Log to console if coding panel is open
+            if (codingPanel.classList.contains('show')) {
+                logToConsole('✓ Project exported successfully', 'success');
+                logToConsole(`Package: ${filename}`, 'log');
+            }
+            
+            // Show AI tutor message
+            showTutorMessage(`🎉 Export complete! Your Unity package is ready. You can now import it into Unity and continue developing your project there!`);
+        }
+
+        // Event Listeners
+        exportButton.addEventListener('click', () => {
+            openExportModal();
+        });
+
+        cancelExportBtn.addEventListener('click', () => {
+            if (exportInProgress) {
+                if (confirm('Are you sure you want to cancel the export?')) {
+                    closeExportModal();
+                }
+            } else {
+                closeExportModal();
+            }
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            closeExportModal();
+        });
+
+        openFolderBtn.addEventListener('click', () => {
+            // In production, this would open the downloads folder
+            alert('Opening downloads folder...\n(In production, this would open your file manager)');
+        });
+
+        // Close modal on background click
+        exportModal.addEventListener('click', (e) => {
+            if (e.target === exportModal && !exportInProgress) {
+                closeExportModal();
+            }
+        });
+
+        // ESC key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && exportModal.classList.contains('show')) {
+                if (!exportInProgress) {
+                    closeExportModal();
+                }
+            }
+        });
+        
+        // Coding panel elements
+        const codingPanel = document.getElementById('coding-panel');
+        const codeClose = document.getElementById('code-close');
+        const scriptTabs = document.querySelectorAll('.script-tab:not(.new)');
+        const newTabBtn = document.querySelector('.script-tab.new');
+        const codeDisplay = document.getElementById('code-display');
+        const lineNumbers = document.getElementById('line-numbers');
+        const consoleOutput = document.getElementById('console-output');
+        const consoleClear = document.getElementById('console-clear');
+        const runCodeBtn = document.getElementById('run-code');
+        const stopCodeBtn = document.getElementById('stop-code');
+        const saveCodeBtn = document.getElementById('save-code');
+        const snippetsBtn = document.getElementById('snippets-btn');
+        const snippetsMenu = document.getElementById('snippets-menu');
+        const snippetItems = document.querySelectorAll('.snippet-item');
+
+        // ============================================
+        // CODING PANEL LOGIC
+        // ============================================
+        
+        // Code templates for different scripts (C# Unity-style)
+        const codeTemplates = {
+            ship: `<span class="syntax-keyword">using</span> <span class="syntax-namespace">Orbrya.Engine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">ShipController</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-comment">// Change this value to control the ship</span>
+    <span class="syntax-modifier">public</span> <span class="syntax-type">float</span> <span class="syntax-variable">RotationSpeed</span> = <span class="syntax-number">0.05f</span>;
+
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-comment">// Apply rotation based on speed</span>
+        <span class="syntax-variable">transform</span>.<span class="syntax-function">Rotate</span>(<span class="syntax-number">0</span>, <span class="syntax-variable">RotationSpeed</span>, <span class="syntax-number">0</span>);
+    }
+}`,
+            
+            collision: `<span class="syntax-keyword">using</span> <span class="syntax-namespace">Orbrya.Engine</span>;
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">UnityEngine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">CollisionDetector</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-comment">// Detects when this object collides with others</span>
+    
+    <span class="syntax-modifier">private</span> <span class="syntax-type">void</span> <span class="syntax-function">OnCollisionEnter</span>(<span class="syntax-type">Collision</span> <span class="syntax-variable">collision</span>)
+    {
+        <span class="syntax-comment">// Get the name of the object we hit</span>
+        <span class="syntax-type">string</span> <span class="syntax-variable">hitObjectName</span> = <span class="syntax-variable">collision</span>.gameObject.name;
+        
+        <span class="syntax-comment">// Check if we hit an obstacle</span>
+        <span class="syntax-keyword">if</span> (<span class="syntax-variable">collision</span>.gameObject.tag == <span class="syntax-string">"Obstacle"</span>)
+        {
+            <span class="syntax-type">Debug</span>.<span class="syntax-function">Log</span>(<span class="syntax-string">"Hit an obstacle: "</span> + <span class="syntax-variable">hitObjectName</span>);
+            
+            <span class="syntax-comment">// Play impact sound</span>
+            <span class="syntax-function">PlayImpactSound</span>();
+        }
+    }
+    
+    <span class="syntax-modifier">private</span> <span class="syntax-type">void</span> <span class="syntax-function">PlayImpactSound</span>()
+    {
+        <span class="syntax-comment">// Play collision sound effect</span>
+        <span class="syntax-type">AudioSource</span> <span class="syntax-variable">audio</span> = <span class="syntax-function">GetComponent</span>&lt;<span class="syntax-type">AudioSource</span>&gt;();
+        <span class="syntax-keyword">if</span> (<span class="syntax-variable">audio</span> != <span class="syntax-keyword">null</span>)
+        {
+            <span class="syntax-variable">audio</span>.<span class="syntax-function">Play</span>();
+        }
+    }
+}`,
+            
+            spawner: `<span class="syntax-keyword">using</span> <span class="syntax-namespace">Orbrya.Engine</span>;
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">UnityEngine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">ObjectSpawner</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-comment">// Spawns objects at random positions</span>
+    
+    <span class="syntax-modifier">public</span> <span class="syntax-type">GameObject</span> <span class="syntax-variable">prefabToSpawn</span>;
+    <span class="syntax-modifier">public</span> <span class="syntax-type">float</span> <span class="syntax-variable">spawnInterval</span> = <span class="syntax-number">2.0f</span>;
+    <span class="syntax-modifier">public</span> <span class="syntax-type">float</span> <span class="syntax-variable">spawnRadius</span> = <span class="syntax-number">5.0f</span>;
+    
+    <span class="syntax-modifier">private</span> <span class="syntax-type">float</span> <span class="syntax-variable">timer</span> = <span class="syntax-number">0f</span>;
+    
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-variable">timer</span> += <span class="syntax-type">Time</span>.deltaTime;
+        
+        <span class="syntax-keyword">if</span> (<span class="syntax-variable">timer</span> >= <span class="syntax-variable">spawnInterval</span>)
+        {
+            <span class="syntax-function">SpawnObject</span>();
+            <span class="syntax-variable">timer</span> = <span class="syntax-number">0f</span>;
+        }
+    }
+    
+    <span class="syntax-type">void</span> <span class="syntax-function">SpawnObject</span>()
+    {
+        <span class="syntax-comment">// Random position within spawn radius</span>
+        <span class="syntax-type">float</span> <span class="syntax-variable">x</span> = <span class="syntax-type">Random</span>.<span class="syntax-function">Range</span>(-<span class="syntax-variable">spawnRadius</span>, <span class="syntax-variable">spawnRadius</span>);
+        <span class="syntax-type">float</span> <span class="syntax-variable">z</span> = <span class="syntax-type">Random</span>.<span class="syntax-function">Range</span>(-<span class="syntax-variable">spawnRadius</span>, <span class="syntax-variable">spawnRadius</span>);
+        <span class="syntax-type">Vector3</span> <span class="syntax-variable">spawnPosition</span> = <span class="syntax-keyword">new</span> <span class="syntax-type">Vector3</span>(<span class="syntax-variable">x</span>, <span class="syntax-number">1f</span>, <span class="syntax-variable">z</span>);
+        
+        <span class="syntax-comment">// Instantiate the prefab</span>
+        <span class="syntax-type">GameObject</span> <span class="syntax-variable">newObject</span> = <span class="syntax-type">Instantiate</span>(<span class="syntax-variable">prefabToSpawn</span>, <span class="syntax-variable">spawnPosition</span>, <span class="syntax-type">Quaternion</span>.identity);
+        
+        <span class="syntax-type">Debug</span>.<span class="syntax-function">Log</span>(<span class="syntax-string">"Spawned object at: "</span> + <span class="syntax-variable">spawnPosition</span>);
+    }
+}`
+        };
+        
+        // Code snippets for quick insertion (C# Unity-style)
+        const codeSnippets = {
+            ship: codeTemplates.ship,
+            collision: codeTemplates.collision,
+            spawner: codeTemplates.spawner,
+            movement: `<span class="syntax-comment">// Player Movement Controller</span>
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">UnityEngine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">PlayerMovement</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-modifier">public</span> <span class="syntax-type">float</span> <span class="syntax-variable">moveSpeed</span> = <span class="syntax-number">5f</span>;
+    
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-type">float</span> <span class="syntax-variable">horizontal</span> = <span class="syntax-type">Input</span>.<span class="syntax-function">GetAxis</span>(<span class="syntax-string">"Horizontal"</span>);
+        <span class="syntax-type">float</span> <span class="syntax-variable">vertical</span> = <span class="syntax-type">Input</span>.<span class="syntax-function">GetAxis</span>(<span class="syntax-string">"Vertical"</span>);
+        
+        <span class="syntax-type">Vector3</span> <span class="syntax-variable">movement</span> = <span class="syntax-keyword">new</span> <span class="syntax-type">Vector3</span>(<span class="syntax-variable">horizontal</span>, <span class="syntax-number">0f</span>, <span class="syntax-variable">vertical</span>);
+        <span class="syntax-variable">transform</span>.<span class="syntax-function">Translate</span>(<span class="syntax-variable">movement</span> * <span class="syntax-variable">moveSpeed</span> * <span class="syntax-type">Time</span>.deltaTime);
+    }
+}`,
+            timer: `<span class="syntax-comment">// Timer / Counter</span>
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">UnityEngine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">GameTimer</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-modifier">private</span> <span class="syntax-type">float</span> <span class="syntax-variable">timer</span> = <span class="syntax-number">0f</span>;
+    
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-variable">timer</span> += <span class="syntax-type">Time</span>.deltaTime;
+        <span class="syntax-type">Debug</span>.<span class="syntax-function">Log</span>(<span class="syntax-string">"Time: "</span> + <span class="syntax-variable">timer</span>.<span class="syntax-function">ToString</span>(<span class="syntax-string">"F2"</span>));
+    }
+}`,
+            input: `<span class="syntax-comment">// Keyboard Input Handler</span>
+<span class="syntax-keyword">using</span> <span class="syntax-namespace">UnityEngine</span>;
+
+<span class="syntax-modifier">public</span> <span class="syntax-keyword">class</span> <span class="syntax-type">InputHandler</span> : <span class="syntax-type">MonoBehaviour</span>
+{
+    <span class="syntax-type">void</span> <span class="syntax-function">Update</span>()
+    {
+        <span class="syntax-keyword">if</span> (<span class="syntax-type">Input</span>.<span class="syntax-function">GetKeyDown</span>(<span class="syntax-type">KeyCode</span>.Space))
+        {
+            <span class="syntax-type">Debug</span>.<span class="syntax-function">Log</span>(<span class="syntax-string">"Space key pressed!"</span>);
+        }
+    }
+}`
+        };
+
+        let currentScript = 'ship';
+        let isCodeRunning = false;
+
+        // Toggle coding panel
+        function toggleCodingPanel() {
+            const isOpen = codingPanel.classList.contains('show');
+            
+            if (isOpen) {
+                codingPanel.classList.remove('show');
+            } else {
+                codingPanel.classList.add('show');
+                updateLineNumbers();
+            }
+        }
+
+        // Switch script tabs
+        scriptTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                scriptTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                currentScript = tab.dataset.script;
+                codeDisplay.innerHTML = codeTemplates[currentScript];
+                updateLineNumbers();
+                
+                logToConsole(`Switched to ${tab.textContent}`, 'log');
+            });
+        });
+
+        // Update line numbers based on code content
+        function updateLineNumbers() {
+            const lines = codeDisplay.textContent.split('\n').length;
+            let numbers = '';
+            for (let i = 1; i <= lines; i++) {
+                numbers += i + '\n';
+            }
+            lineNumbers.textContent = numbers;
+        }
+
+        // Console logging
+        function logToConsole(message, type = 'log') {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            
+            const prefix = {
+                log: '>',
+                warn: '⚠',
+                error: '✖',
+                success: '✓'
+            }[type] || '>';
+            
+            line.textContent = `${prefix} ${message}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // Clear console
+        consoleClear.addEventListener('click', () => {
+            consoleOutput.innerHTML = '<div class="console-line success">✓ Console cleared</div>';
+        });
+
+        // Run code (simulated C# compilation and execution)
+        runCodeBtn.addEventListener('click', () => {
+            if (isCodeRunning) return;
+            
+            isCodeRunning = true;
+            runCodeBtn.style.display = 'none';
+            stopCodeBtn.style.display = 'flex';
+            
+            logToConsole('Compiling C# script...', 'log');
+            logToConsole(`Building ${currentScript}.cs`, 'log');
+            
+            // Simulate compilation
+            setTimeout(() => {
+                logToConsole('✓ Compilation successful', 'success');
+            }, 400);
+            
+            setTimeout(() => {
+                logToConsole('✓ ShipController class loaded', 'success');
+            }, 700);
+            
+            setTimeout(() => {
+                logToConsole('✓ MonoBehaviour Start() called', 'success');
+            }, 1000);
+            
+            setTimeout(() => {
+                logToConsole('✓ Update() loop running at 60 FPS', 'success');
+            }, 1300);
+            
+            setTimeout(() => {
+                logToConsole('Script active! Object rotating on Y-axis', 'log');
+            }, 1600);
+            
+            setTimeout(() => {
+                logToConsole('Memory usage: +5% (script runtime)', 'warn');
+                // Update budget slightly
+                updateBudget(Math.min(100, currentBudget + 5));
+            }, 1900);
+            
+            // Show tutor hint
+            setTimeout(() => {
+                showTutorMessage('Excellent! Your C# script is running. Try changing the RotationSpeed value from 0.05f to 0.1f to make it spin faster!');
+            }, 2200);
+        });
+
+        // Stop code
+        stopCodeBtn.addEventListener('click', () => {
+            isCodeRunning = false;
+            stopCodeBtn.style.display = 'none';
+            runCodeBtn.style.display = 'flex';
+            
+            logToConsole('Script execution stopped', 'warn');
+            logToConsole('MonoBehaviour Update() loop halted', 'log');
+            updateBudget(Math.max(15, currentBudget - 5));
+        });
+
+        // Save code
+        saveCodeBtn.addEventListener('click', () => {
+            const scriptName = document.querySelector('.script-tab.active').textContent;
+            logToConsole(`✓ Saved ${scriptName}`, 'success');
+            showTutorMessage(`C# script saved! Remember, clean code with clear variable names is easier to debug and maintain.`);
+        });
+
+        // Snippets menu
+        snippetsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            snippetsMenu.classList.toggle('show');
+        });
+
+        // Close snippets menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!snippetsMenu.contains(e.target) && e.target !== snippetsBtn) {
+                snippetsMenu.classList.remove('show');
+            }
+        });
+
+        // Insert snippet
+        snippetItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const snippet = item.dataset.snippet;
+                codeDisplay.innerHTML = codeSnippets[snippet];
+                updateLineNumbers();
+                snippetsMenu.classList.remove('show');
+                logToConsole(`Inserted snippet: ${item.textContent}`, 'success');
+            });
+        });
+
+        // New tab button
+        newTabBtn.addEventListener('click', () => {
+            const name = prompt('Enter C# script name (without .cs):', 'NewBehavior');
+            if (name) {
+                const fullName = name.endsWith('.cs') ? name : name + '.cs';
+                logToConsole(`Created new C# script: ${fullName}`, 'success');
+                showTutorMessage(`Great! You can create as many C# scripts as you need. Each MonoBehaviour script can control different game objects.`);
+            }
+        });
+
+        // Close coding panel
+        codeClose.addEventListener('click', () => {
+            toggleCodingPanel();
+        });
+
+        // ============================================
+        // HOTBAR TOOL SELECTION
+        // ============================================
+        function selectTool(toolName) {
+            // Remove active from all tools
+            hotbarItems.forEach(item => item.classList.remove('active'));
+            
+            // Find and activate the clicked tool
+            const toolItem = document.querySelector(`[data-tool="${toolName}"]`);
+            if (toolItem) {
+                toolItem.classList.add('active');
+                currentTool = toolName;
+                
+                console.log(`Tool selected: ${toolName}`);
+                
+                // Optional: Show tutor hint for first-time tool use
+                const toolHints = {
+                    'select': 'Select tool active! Click objects to move them around. 👆',
+                    'rotate': 'Rotate tool active! Click and drag to spin objects. 🔄',
+                    'scale': 'Scale tool active! Make objects bigger or smaller. ↔️',
+                    'paint': 'Paint tool active! Click objects to change their colors. 🎨',
+                    'duplicate': 'Duplicate tool active! Click objects to copy them. Remember your memory budget! 📑',
+                    'delete': 'Delete tool active! Click objects to remove them. 🗑️',
+                    'grid': 'Snap to Grid toggled! Objects will align to a grid for precise placement. ⊞',
+                    'undo': 'Undoing last action... ↶',
+                    'play': 'Entering Play Mode! Test your creation. Press P again to exit. ▶️'
+                };
+                
+                // Show hint only for specific tools
+                if (['duplicate', 'play', 'grid'].includes(toolName)) {
+                    showTutorMessage(toolHints[toolName]);
+                }
+            }
+        }
+
+        // Hotbar click handlers
+        hotbarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const tool = item.dataset.tool;
+                selectTool(tool);
+            });
+        });
+
+        // Keyboard shortcuts for tools
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in input fields
+            if (e.target.matches('input, textarea')) return;
+            
+            const key = e.key.toLowerCase();
+            const keyMap = {
+                '1': 'select',
+                '2': 'rotate',
+                '3': 'scale',
+                '4': 'paint',
+                '5': 'duplicate',
+                '6': 'delete',
+                '7': 'grid',
+                'z': 'undo',
+                'p': 'play'
+            };
+            
+            if (keyMap[key]) {
+                e.preventDefault();
+                selectTool(keyMap[key]);
+            }
+        });
+
+        // ============================================
+        // SAVE/LOAD PANEL
+        // ============================================
+        function toggleSaveLoadPanel() {
+            const isOpen = saveLoadPanel.classList.contains('show');
+            
+            if (isOpen) {
+                saveLoadPanel.classList.remove('show');
+            } else {
+                saveLoadPanel.classList.add('show');
+                // Update displays when opening
+                updateProjectStats();
+            }
+        }
+
+        function updateProjectStats() {
+            objectCountDisplay.textContent = objectCount;
+            projectNameInput.value = projectData.name;
+            
+            if (projectData.lastSaved) {
+                const timeSince = getTimeSince(projectData.lastSaved);
+                lastSavedDisplay.textContent = timeSince;
+            } else {
+                lastSavedDisplay.textContent = 'Never';
+            }
+        }
+
+        function getTimeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        function saveProject() {
+            projectData.name = projectNameInput.value || 'Untitled Project';
+            projectData.lastSaved = new Date();
+            projectData.objects = []; // In production, get actual scene objects
+            
+            // Mock save to localStorage (in production, save to your C# backend)
+            const saveData = {
+                name: projectData.name,
+                objects: projectData.objects,
+                objectCount: objectCount,
+                memoryBudget: currentBudget,
+                timestamp: projectData.lastSaved.toISOString()
+            };
+            
+            localStorage.setItem('orbrya_current_project', JSON.stringify(saveData));
+            
+            // Update display
+            updateProjectStats();
+            
+            // Show success message
+            showTutorMessage(`✅ Project "${projectData.name}" saved successfully!`);
+            
+            console.log('Project saved:', saveData);
+        }
+
+        function loadProject(projectName) {
+            // Mock load from localStorage (in production, load from your C# backend)
+            const savedData = localStorage.getItem('orbrya_current_project');
+            
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                projectData.name = data.name;
+                projectData.lastSaved = new Date(data.timestamp);
+                objectCount = data.objectCount;
+                currentBudget = data.memoryBudget;
+                
+                // Update displays
+                updateProjectStats();
+                updateBudget(currentBudget);
+                
+                showTutorMessage(`📂 Project "${projectData.name}" loaded!`);
+                toggleSaveLoadPanel();
+                
+                console.log('Project loaded:', data);
+            } else {
+                showTutorMessage('No saved project found. Try saving first!');
+            }
+        }
+
+        function exportProject() {
+            const exportData = {
+                name: projectData.name,
+                objects: projectData.objects,
+                objectCount: objectCount,
+                memoryBudget: currentBudget,
+                exportedAt: new Date().toISOString()
+            };
+            
+            // Create downloadable JSON file
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectData.name.replace(/\s+/g, '_')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showTutorMessage(`📤 Project exported as JSON! You can share it with classmates.`);
+            console.log('Project exported:', exportData);
+        }
+
+        // Panel event listeners
+        toggleSavePanel.addEventListener('click', toggleSaveLoadPanel);
+        panelClose.addEventListener('click', toggleSaveLoadPanel);
+        saveProjectBtn.addEventListener('click', saveProject);
+        saveAsProjectBtn.addEventListener('click', () => {
+            projectNameInput.value = projectData.name + ' (Copy)';
+            saveProject();
+        });
+        loadProjectBtn.addEventListener('click', () => loadProject());
+        exportProjectBtn.addEventListener('click', exportProject);
+
+        // Recent project items
+        projectItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const projectName = item.querySelector('.project-name').textContent;
+                showTutorMessage(`Loading "${projectName}"... (Demo only - connect to your backend!)`);
+                console.log('Load project:', projectName);
+            });
+        });
+
+        // ============================================
+        // SOCRATIC CHATBOT LOGIC
+        // ============================================
+        
+        // Socratic response patterns - these guide learning through questions
+        const socraticPatterns = {
+            // Memory/Performance questions
+            'memory|budget|ram|performance|slow|lag': {
+                responses: [
+                    "Great question! Before I tell you, what do you think happens when we add more objects to a 3D scene? 🤔",
+                    "Let's think through this together. If your computer has to render 100 trees versus 10 trees, which would take more resources? Why?",
+                    "Interesting! Have you noticed how the Memory Budget bar changes when you add objects? What pattern do you see?"
+                ],
+                quickReplies: ["Show me", "I'm not sure", "Trees use more memory"]
+            },
+            
+            // Optimization questions
+            'optimize|faster|improve|reduce|less memory': {
+                responses: [
+                    "Excellent thinking! What if instead of creating 50 unique trees, we used the same tree model 50 times? Would that save memory?",
+                    "Let's explore this! Can you think of ways to make your scene look detailed without adding lots of objects?",
+                    "Smart question! Have you considered which objects are most important? What could you remove or simplify?"
+                ],
+                quickReplies: ["Reuse objects?", "Simplify shapes?", "Tell me more"]
+            },
+            
+            // Building/Creation questions
+            'how do i|how to|create|build|make|add': {
+                responses: [
+                    "I love your curiosity! What are you trying to build? Let's break it down into smaller steps together.",
+                    "Great! Before we build, let's think: what shapes would you need? A house might need cubes and triangles, right?",
+                    "Building is fun! Have you explored the categories in the left menu? Which one seems most useful for what you want to create?"
+                ],
+                quickReplies: ["Show categories", "Need basic shapes", "Start simple"]
+            },
+            
+            // Logic/Programming questions
+            'logic|program|code|script|interactive': {
+                responses: [
+                    "Ah, logic blocks! These are like instructions for your objects. What do you want your creation to do?",
+                    "Think of logic like a recipe: First do X, then do Y. What steps would make your object interactive?",
+                    "Great idea! If you wanted a door to open when clicked, what would need to happen first? Then what?"
+                ],
+                quickReplies: ["Movement?", "Click events?", "Show examples"]
+            },
+            
+            // Stuck/Help questions
+            'stuck|help|don\'t understand|confused|error': {
+                responses: [
+                    "No worries! Let's figure this out together. Can you describe what you were trying to do when you got stuck?",
+                    "Getting stuck means you're learning! 🌟 What's the last thing that worked? Let's start there.",
+                    "I'm here to help! Sometimes it helps to break problems into tiny pieces. What's the first small step?"
+                ],
+                quickReplies: ["Start over?", "Show tutorial", "Simpler example"]
+            },
+            
+            // Why questions (deeper learning)
+            'why|what if|what happens': {
+                responses: [
+                    "That's a fantastic question! What do you predict would happen? Let's test your hypothesis!",
+                    "Good thinking! Why do YOU think that might be? Understanding your reasoning helps us learn together.",
+                    "I love that you're asking 'why'! That's how real engineers think. What's your theory?"
+                ],
+                quickReplies: ["Not sure", "Let me try", "Explain more"]
+            },
+            
+            // Specific technical terms
+            'polygon|mesh|vertex|triangle': {
+                responses: [
+                    "Ooh, technical terms! Do you know what polygons are? They're the building blocks of 3D models - like tiny triangles!",
+                    "Great vocabulary! More polygons = more detail but also more memory. Can you see the tradeoff?",
+                    "You're learning 3D concepts! Each object is made of many small shapes. Fewer shapes = better performance. Make sense?"
+                ],
+                quickReplies: ["Show example", "Why triangles?", "Got it!"]
+            },
+            
+            // Encouragement/Positive
+            'thanks|thank you|cool|awesome|great': {
+                responses: [
+                    "You're welcome! I'm excited to see what you create! 🎨",
+                    "Happy to help! Remember, experimentation is how we learn. Try things!",
+                    "You're doing great! Keep asking questions - that's how you become an expert! 💪"
+                ],
+                quickReplies: ["What's next?", "More tips", "Let's build!"]
+            }
+        };
+
+        // Default responses when no pattern matches
+        const defaultResponses = [
+            "Hmm, I'm not sure I understand. Can you rephrase that? Or try asking about memory, building, or optimization!",
+            "Interesting question! Let's think about it differently: what do you already know about this topic?",
+            "I want to help you discover the answer! What have you tried so far?",
+            "Great curiosity! Can you break your question into smaller parts? Sometimes that helps!"
+        ];
+
+        let conversationHistory = [];
+
+        // Add a message to the chat
+        function addMessage(text, isUser = false, showTyping = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            if (showTyping) {
+                messageDiv.classList.add('thinking');
+                bubble.innerHTML = `
+                    <div class="typing-indicator">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                `;
+            } else {
+                bubble.textContent = text;
+            }
+            
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageDiv;
+        }
+
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const typingMsg = chatMessages.querySelector('.message.thinking');
+            if (typingMsg) {
+                typingMsg.remove();
+            }
+        }
+
+        // Find matching Socratic response
+        function getSocraticResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase().trim();
+            
+            // Check each pattern
+            for (const [pattern, data] of Object.entries(socraticPatterns)) {
+                const regex = new RegExp(pattern, 'i');
+                if (regex.test(lowerMessage)) {
+                    // Return random response from matching pattern
+                    const response = data.responses[Math.floor(Math.random() * data.responses.length)];
+                    return {
+                        text: response,
+                        quickReplies: data.quickReplies
+                    };
+                }
+            }
+            
+            // No pattern matched, return default
+            return {
+                text: defaultResponses[Math.floor(Math.random() * defaultResponses.length)],
+                quickReplies: ["Tell me about memory", "How do I optimize?", "Show examples"]
+            };
+        }
+
+        // Show quick reply buttons
+        function showQuickReplies(replies) {
+            quickRepliesContainer.innerHTML = '';
+            
+            if (!replies || replies.length === 0) return;
+            
+            replies.forEach(reply => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-reply-btn';
+                btn.textContent = reply;
+                btn.onclick = () => {
+                    handleUserMessage(reply);
+                };
+                quickRepliesContainer.appendChild(btn);
+            });
+        }
+
+        // Handle user sending a message
+        function handleUserMessage(message) {
+            if (!message || message.trim() === '') return;
+            
+            // Add user message
+            addMessage(message, true);
+            conversationHistory.push({ role: 'user', text: message });
+            
+            // Clear input and quick replies
+            chatInput.value = '';
+            quickRepliesContainer.innerHTML = '';
+            
+            // Show typing indicator
+            const typingMsg = addMessage('', false, true);
+            
+            // Simulate thinking delay (500-1500ms for realism)
+            const thinkingTime = 500 + Math.random() * 1000;
+            
+            setTimeout(() => {
+                removeTypingIndicator();
+                
+                // Get Socratic response
+                const response = getSocraticResponse(message);
+                addMessage(response.text, false);
+                conversationHistory.push({ role: 'bot', text: response.text });
+                
+                // Show quick replies after a short delay
+                setTimeout(() => {
+                    showQuickReplies(response.quickReplies);
+                }, 300);
+            }, thinkingTime);
+        }
+
+        // Send button click
+        chatSendBtn.addEventListener('click', () => {
+            handleUserMessage(chatInput.value);
+        });
+
+        // Enter key to send
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserMessage(chatInput.value);
+            }
+        });
+
+        // Auto-focus input when chat opens
+        function focusChatInput() {
+            setTimeout(() => {
+                if (tutorChat.classList.contains('show')) {
+                    chatInput.focus();
+                }
+            }, 300);
+        }
+
+        // ============================================
+        // BUDGET BAR LOGIC
+        // ============================================
+        function updateBudget(newValue) {
+            currentBudget = Math.min(Math.max(newValue, 0), MAX_BUDGET);
+            
+            // Update visual
+            budgetFill.style.width = `${currentBudget}%`;
+            budgetPercentage.textContent = `${Math.round(currentBudget)}%`;
+            
+            // Reset classes
+            budgetFill.classList.remove('warning', 'danger');
+            budgetWarning.classList.remove('show', 'warning', 'danger');
+            
+            // Apply color states
+            if (currentBudget >= 90) {
+                budgetFill.classList.add('danger');
+                budgetWarning.classList.add('show', 'danger');
+                budgetWarning.textContent = '⚠️ CRITICAL: Memory almost full!';
+                
+                // Trigger AI notification
+                if (currentBudget >= 95 && !tutorChat.classList.contains('show')) {
+                    showTutorMessage('⚠️ Warning! You\'re at 95% memory capacity. Consider removing some objects or optimizing your scene.');
+                }
+            } else if (currentBudget >= 70) {
+                budgetFill.classList.add('warning');
+                budgetWarning.classList.add('show', 'warning');
+                budgetWarning.textContent = '⚡ Caution: Memory usage is high';
+            }
+        }
+
+        // Simulate adding objects (increases budget by 5-10%)
+        function addObject() {
+            const increase = Math.random() * 5 + 5; // Random 5-10%
+            updateBudget(currentBudget + increase);
+        }
+
+        // ============================================
+        // PALETTE INTERACTION
+        // ============================================
+        paletteItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active from all
+                paletteItems.forEach(i => i.classList.remove('active'));
+                // Add active to clicked
+                item.classList.add('active');
+                
+                // Log selection (in production, this would notify your C# backend)
+                const category = item.dataset.category;
+                console.log(`Category selected: ${category}`);
+                
+                // Special handling for Logic category
+                if (category === 'logic') {
+                    toggleCodingPanel();
+                    showTutorMessage('Welcome to the C# Logic Editor! Write Unity-style scripts to control your 3D objects. Try clicking "Run Code" to compile and run the example ShipController script!');
+                    return;
+                }
+                
+                // Simulate adding object
+                objectCount++;
+                updateProjectStats();
+                
+                // Optional: Show tutor hint
+                const hints = {
+                    nature: 'Great choice! Natural elements can make your world feel alive. Remember, each tree uses memory!',
+                    structures: 'Building structures? Try to reuse similar shapes to save memory.',
+                    scifi: 'Sci-fi objects are complex. Watch your budget carefully!'
+                };
+                
+                showTutorMessage(hints[category]);
+            });
+        });
+
+        // ============================================
+        // SOCRATIC TUTOR INTERACTION
+        // ============================================
+        function showTutorMessage(message, isSystemMessage = true) {
+            // Open chat if closed
+            if (!tutorChat.classList.contains('show')) {
+                toggleTutor();
+            }
+            
+            // Add bot message
+            if (isSystemMessage) {
+                // System messages don't need thinking delay
+                setTimeout(() => {
+                    addMessage(message, false);
+                    conversationHistory.push({ role: 'bot', text: message });
+                }, 100);
+            }
+        }
+
+        function toggleTutor() {
+            const isOpen = tutorChat.classList.contains('show');
+            
+            if (isOpen) {
+                tutorChat.classList.remove('show');
+                tutorAvatar.classList.remove('chat-open');
+                chatInput.blur();
+            } else {
+                tutorChat.classList.add('show');
+                tutorAvatar.classList.add('chat-open');
+                focusChatInput();
+            }
+        }
+
+        tutorAvatar.addEventListener('click', toggleTutor);
+        chatClose.addEventListener('click', toggleTutor);
+
+        // Handle chat button clicks (removed - now using input field)
+        // Keeping this in case you want to add action buttons later
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('chat-button')) {
+                console.log('Chat action:', e.target.textContent);
+                // Handle any future action buttons
+            }
+        });
+
+        // ============================================
+        // DEBUG CONTROLS (Remove in production)
+        // ============================================
+        addTreeBtn.addEventListener('click', () => {
+            addObject();
+            console.log('Tree added. Current budget:', currentBudget);
+        });
+
+        resetBudgetBtn.addEventListener('click', () => {
+            updateBudget(15);
+            console.log('Budget reset to 15%');
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        console.log('Student Workbench UI initialized!');
+        console.log('Ready to integrate with C# WASM backend.');
+        console.log('Socratic Chatbot active with pattern matching!');
+        console.log('Hotbar tools ready - Press 1-9 for quick selection!');
+        console.log('Save/Load panel ready - Click the 💾 icon!');
+        
+        // Initialize budget display
+        updateBudget(15);
+        
+        // Initialize project stats
+        updateProjectStats();
+        
+        // Show welcome message after 1 second
+        setTimeout(() => {
+            addMessage('Welcome to your Student Workbench! 👋 I\'m your learning assistant. Click any category on the left to start building, or ask me questions!', false);
+            conversationHistory.push({ 
+                role: 'bot', 
+                text: 'Welcome message' 
+            });
+            
+            // Show helpful starter questions
+            setTimeout(() => {
+                showQuickReplies([
+                    'What is memory budget?',
+                    'How do I build?',
+                    'Show me optimization tips'
+                ]);
+            }, 500);
+        }, 1000);
+
+        // ============================================
+        // C# WASM INTEGRATION BRIDGE
+        // ============================================
+        // Expose functions for your C# backend to call
+        window.OrbryaUI = {
+            // Tool selection
+            selectTool: (toolName) => selectTool(toolName),
+            getCurrentTool: () => currentTool,
+            
+            // Budget management
+            updateBudget: (percentage) => updateBudget(percentage),
+            getCurrentBudget: () => currentBudget,
+            
+            // Object management
+            addObject: () => {
+                objectCount++;
+                updateProjectStats();
+                addObject(); // Increase budget
+            },
+            removeObject: () => {
+                if (objectCount > 0) {
+                    objectCount--;
+                    updateProjectStats();
+                    updateBudget(Math.max(15, currentBudget - 3));
+                }
+            },
+            getObjectCount: () => objectCount,
+            
+            // Save/Load
+            saveProject: () => saveProject(),
+            loadProject: () => loadProject(),
+            exportProject: () => exportProject(),
+            
+            // AI Tutor
+            showTutorMessage: (message) => showTutorMessage(message),
+            
+            // Project data
+            getProjectData: () => projectData,
+            setProjectName: (name) => {
+                projectData.name = name;
+                updateProjectStats();
+            },
+            
+            // Coding Panel
+            openCodingPanel: () => {
+                if (!codingPanel.classList.contains('show')) {
+                    toggleCodingPanel();
+                }
+            },
+            closeCodingPanel: () => {
+                if (codingPanel.classList.contains('show')) {
+                    toggleCodingPanel();
+                }
+            },
+            runCode: () => runCodeBtn.click(),
+            stopCode: () => stopCodeBtn.click(),
+            logToConsole: (message, type = 'log') => logToConsole(message, type),
+            getCodeContent: () => codeDisplay.textContent,
+            setCodeContent: (code) => {
+                codeDisplay.innerHTML = code;
+                updateLineNumbers();
+            },
+            
+            // Export Modal
+            openExportModal: () => openExportModal(),
+            closeExportModal: () => closeExportModal(),
+            triggerExport: () => exportButton.click()
+        };
+
+        console.log('OrbryaUI bridge exposed to window for C# integration');
+        console.log('Example: OrbryaUI.selectTool("rotate") or OrbryaUI.updateBudget(75)');
+        console.log('Coding Panel: OrbryaUI.openCodingPanel() or OrbryaUI.logToConsole("Hello", "log")');
+        console.log('Export Modal: OrbryaUI.openExportModal() or OrbryaUI.triggerExport()');
+    </script>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Three.js Scene Initialization -->
+    <script>
+        // Three.js Scene Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e27);
+                
+        const camera = new THREE.PerspectiveCamera(
+            75, 
+            window.innerWidth / window.innerHeight, 
+            0.1, 
+            1000
+        );
+        
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true 
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        // Create the main cube
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x00ff88,
+            emissive: 0x00ff88,
+            emissiveIntensity: 0.2,
+            shininess: 100
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+        
+        // Add wireframe edges
+        const edges = new THREE.EdgesGeometry(geometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+        cube.add(wireframe);
+        
+        // Lighting
+        const light1 = new THREE.DirectionalLight(0xffffff, 1);
+        light1.position.set(5, 5, 5);
+        scene.add(light1);
+        
+        const light2 = new THREE.DirectionalLight(0x667eea, 0.5);
+        light2.position.set(-5, -5, -5);
+        scene.add(light2);
+        
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+        
+        // Starfield background
+        const starGeometry = new THREE.BufferGeometry();
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const starVertices = [];
+        for (let i = 0; i < 200; i++) {
+            const x = (Math.random() - 0.5) * 100;
+            const y = (Math.random() - 0.5) * 100;
+            const z = (Math.random() - 0.5) * 100;
+            starVertices.push(x, y, z);
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+        
+        camera.position.z = 5;
+        
+        // Rotation control from C# backend
+        let rotationSpeed = { x: 0.01, y: 0.01 };
+        
+        window.setRotationSpeed = function(x, y) {
+            rotationSpeed.x = x;
+            rotationSpeed.y = y;
+            console.log(`Rotation speed updated: X=${x.toFixed(3)}, Y=${y.toFixed(3)}`);
+        };
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            cube.rotation.x += rotationSpeed.x;
+            cube.rotation.y += rotationSpeed.y;
+            
+            stars.rotation.y += 0.0001;
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Start animation
+        animate();
+        console.log('✅ Three.js scene initialized with Student Workbench UI');
+    </script>
+    
+    <!-- C# WASM Backend -->
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
