@@ -8,6 +8,10 @@ A fully integrated C# WebAssembly + Three.js game engine with a comprehensive St
 [![Three.js](https://img.shields.io/badge/Three.js-r128-000000?logo=three.js)](https://threejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+## 🎮 **[▶️ PLAY LIVE DEMO](https://oskinner-dev.github.io/orbrya-student-workbench/)**
+
+Try it now! No installation required - runs entirely in your browser.
+
 ---
 
 ## ✨ Features
@@ -61,11 +65,16 @@ A fully integrated C# WebAssembly + Three.js game engine with a comprehensive St
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Play Online
+**[▶️ Launch Demo](https://oskinner-dev.github.io/orbrya-student-workbench/)** - No installation needed!
+
+### Run Locally
+
+#### Prerequisites
 - [.NET 8 SDK](https://dotnet.microsoft.com/download) or higher
 - Modern web browser (Chrome 90+, Edge 90+, Firefox 88+)
 
-### Installation
+#### Installation
 
 ```bash
 # Clone the repository
@@ -82,7 +91,6 @@ dotnet build
 dotnet run
 ```
 
-### Access the Application
 Open your browser to `http://localhost:5000`
 
 ---
@@ -137,6 +145,14 @@ Open your browser to `http://localhost:5000`
 
 ---
 
+## 🎮 Try It Now!
+
+### **[▶️ PLAY DEMO](https://oskinner-dev.github.io/orbrya-student-workbench/)**
+
+Experience the full Student Workbench in your browser!
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -166,3 +182,11 @@ Give a ⭐️ if this project helped you!
 **Built with ❤️ for Game Development Education**
 
 *Empowering the next generation of game developers* 🎮
+
+---
+
+## 🔗 Links
+
+- **[Live Demo](https://oskinner-dev.github.io/orbrya-student-workbench/)**
+- **[GitHub Repository](https://github.com/oskinner-dev/orbrya-student-workbench)**
+- **[Report Issues](https://github.com/oskinner-dev/orbrya-student-workbench/issues)**
