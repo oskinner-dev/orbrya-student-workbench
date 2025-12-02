@@ -1,0 +1,17 @@
+﻿bin/
+obj/
+out/
+*.dll
+*.exe
+*.pdb
+WasmApp/bin/
+WasmApp/obj/
+WasmApp/wwwroot/_framework/
+*.user
+*.suo
+.vs/
+.vscode/
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
