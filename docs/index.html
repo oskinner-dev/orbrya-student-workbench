@@ -1609,41 +1609,7 @@
             }
         }
 
-        /* ============================================
-           DEBUG / TEST CONTROLS (TOP RIGHT)
-        ============================================ */
-        #debug-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 16px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .debug-button {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .debug-button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
-        }
-
-        .debug-button:active {
-            transform: translateY(0);
-        }
+        /* Debug controls removed - Phase 1 MVP */
 
         /* ============================================
            RESPONSIVE ADJUSTMENTS
@@ -1987,11 +1953,7 @@
             📦 Export to Unity
         </button>
 
-        <!-- DEBUG CONTROLS (Remove in production) -->
-        <div id="debug-controls" class="glass-light">
-            <button class="debug-button" id="add-tree">➕ Add Tree (↑ Budget)</button>
-            <button class="debug-button" id="reset-budget">🔄 Reset Budget</button>
-        </div>
+        <!-- Debug controls removed - Phase 1 MVP -->
 
         <!-- EXPORT MODAL -->
         <div class="modal-overlay" id="export-modal">
@@ -2162,8 +2124,7 @@
         const chatSendBtn = document.getElementById('chat-send-btn');
         const quickRepliesContainer = document.getElementById('quick-replies');
         const paletteItems = document.querySelectorAll('.palette-item');
-        const addTreeBtn = document.getElementById('add-tree');
-        const resetBudgetBtn = document.getElementById('reset-budget');
+        // Debug buttons removed - Phase 1 MVP
         
         // Hotbar elements
         const hotbarItems = document.querySelectorAll('.hotbar-item');
@@ -3136,6 +3097,30 @@
             }
         }
 
+        // ============================================
+        // CONNECT TO C# ENGINE (Phase 1 MVP)
+        // ============================================
+        
+        // Expose UI functions to C# Engine via window.OrbryaUI
+        window.OrbryaUI = {
+            updateBudget: function(percentage) {
+                updateBudget(percentage);
+            },
+            showTutorMessage: function(message) {
+                showTutorMessage(message);
+            }
+        };
+        
+        // Poll C# Engine for memory updates every second
+        setInterval(() => {
+            if (window.CSharpEngine && window.CSharpEngine.GetMemoryPercentage) {
+                const memoryPercent = window.CSharpEngine.GetMemoryPercentage();
+                updateBudget(memoryPercent);
+            }
+        }, 1000);
+        
+        console.log('✅ Memory budget bar connected to C# Engine');
+
         // Simulate adding objects (increases budget by 5-10%)
         function addObject() {
             const increase = Math.random() * 5 + 5; // Random 5-10%
@@ -3226,15 +3211,9 @@
         // ============================================
         // DEBUG CONTROLS (Remove in production)
         // ============================================
-        addTreeBtn.addEventListener('click', () => {
-            addObject();
-            console.log('Tree added. Current budget:', currentBudget);
-        });
+        // Debug button event listeners removed - Phase 1 MVP
+        // Budget tracking now handled by C# Engine via updateMemoryBudget()
 
-        resetBudgetBtn.addEventListener('click', () => {
-            updateBudget(15);
-            console.log('Budget reset to 15%');
-        });
 
         // ============================================
         // INITIALIZATION
