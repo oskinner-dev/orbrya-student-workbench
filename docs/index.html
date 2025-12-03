@@ -3069,8 +3069,18 @@
         // ============================================
         // BUDGET BAR LOGIC
         // ============================================
+        let lastDisplayedBudget = -1;
         function updateBudget(newValue) {
             currentBudget = Math.min(Math.max(newValue, 0), MAX_BUDGET);
+            
+            // Debug: Log if value is unexpected or changed significantly
+            if (currentBudget > 10 || Math.abs(currentBudget - lastDisplayedBudget) > 0.1) {
+                console.log(`[Budget Bar] Displaying: ${currentBudget.toFixed(3)}% (rounded: ${Math.round(currentBudget)}%)`);
+                if (currentBudget > 10) {
+                    console.warn(`⚠️ UNEXPECTED: Budget bar showing ${currentBudget.toFixed(1)}% - should be <2% for small scenes!`);
+                }
+                lastDisplayedBudget = currentBudget;
+            }
             
             // Update visual
             budgetFill.style.width = `${currentBudget}%`;
@@ -3116,6 +3126,7 @@
         };
         
         // Poll C# Engine for memory updates every second using hybrid calculation
+        let lastLoggedPercentage = -1;
         setInterval(() => {
             if (window.CSharpEngine && window.CSharpEngine.GetManagedHeapKB) {
                 // Use hybrid memory calculation (same as main.js updateMemoryBudget)
@@ -3124,8 +3135,15 @@
                 
                 // Use max of entity estimate vs actual C# heap
                 const totalKB = Math.max(entityKB, csharpKB);
-                const limitKB = 400 * 1024; // 400MB
+                const limitKB = 409600; // 400MB = 400 * 1024
                 const percentage = Math.min((totalKB / limitKB) * 100, 100);
+                
+                // Debug log only when percentage changes
+                if (Math.abs(percentage - lastLoggedPercentage) > 0.01) {
+                    console.log(`[Memory Poll] C# Heap: ${csharpKB}KB, Entity Cost: ${entityKB}KB, Total: ${totalKB}KB, Limit: ${limitKB}KB`);
+                    console.log(`[Memory Poll] Percentage: ${percentage.toFixed(3)}% (showing ${percentage.toFixed(1)}% on bar)`);
+                    lastLoggedPercentage = percentage;
+                }
                 
                 updateBudget(percentage);
             }

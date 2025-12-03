@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "WasmApp.dll",
   "resources": {
-    "hash": "sha256-JVmRT77++XXPohkL72pnZEmQM2Raq7ECH1hC8U2agIk=",
+    "hash": "sha256-i8MIgJj8cUYe9bhZlcyxpaWn7wAuWbb9P3l7UM7k1m0=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-eOpkfIWka783e4w1RDzfYdK7mAqU/1Nae7HtZosWX/o="
     },
@@ -11,16 +11,19 @@
     "wasmNative": {
       "dotnet.native.wasm": "sha256-wKcONnmv8uosfGJvhTN6lkcYefp2qcC8uCluDavA92E="
     },
+    "wasmSymbols": {
+      "dotnet.native.js.symbols": "sha256-fa1qytB4hfXSzr8EUiG6x6C41B70TJAvGWPDrRyJC6k="
+    },
     "assembly": {
       "System.Collections.Concurrent.wasm": "sha256-++fpENKKCaWSyBSTayo4KFX2lFBjFm7P19dwZWPWqCk=",
       "System.Console.wasm": "sha256-6ygbBcRnHn1hDFfAvyKDOm39FqzBRVf5GI6xsVb0kMM=",
       "System.Linq.wasm": "sha256-bZkTanAqykNbJe2YAib11B5+XJjcVwc1enD/WAAPD8E=",
       "System.Memory.wasm": "sha256-EaRyr763fIgBlUUaRslCCzOvftS/IHxDjcqHTHsdgqY=",
       "System.Private.CoreLib.wasm": "sha256-0y7qd8o9gsdQUpi8pQyHjsrUkbMpA/UNEB47RXhZ9E0=",
-      "System.Runtime.InteropServices.JavaScript.wasm": "sha256-JtbxCtgswzrbbTWbCZRUSCDie8FRcqrCEDHQQMoy0OM=",
+      "System.Runtime.InteropServices.JavaScript.wasm": "sha256-mFM1aFzGLO/jEC3F5DtcqKd6BKtWd1O8TnvwT1RZMoA=",
       "System.Text.Encodings.Web.wasm": "sha256-hupBPKs0UTVuJ7vA/QI+qbShV6jvuXxskmT2G6S6E5I=",
       "System.Text.Json.wasm": "sha256-lN6dir1KkB/diA01g5BM2S56Q1LvIZi0yR1uJ1L8rMk=",
-      "WasmApp.wasm": "sha256-bJpgSpTDDSis3o4mIP8GkKuSSZTSzzIJYW7yyjcP00Q="
+      "WasmApp.wasm": "sha256-PrUIVUV/IBZxKnN8iyb0X8YANn88y0yX9ryI11KgLaA="
     },
     "vfs": {
       "runtimeconfig.bin": {
