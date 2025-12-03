@@ -3120,6 +3120,8 @@
         }, 1000);
         
         console.log('✅ Memory budget bar connected to C# Engine');
+        console.log('🌲 Click the Nature button (tree icon) in the left sidebar to spawn trees!');
+
 
         // Simulate adding objects (increases budget by 5-10%)
         function addObject() {
@@ -3148,18 +3150,38 @@
                     return;
                 }
                 
-                // Simulate adding object
-                objectCount++;
-                updateProjectStats();
-                
-                // Optional: Show tutor hint
-                const hints = {
-                    nature: 'Great choice! Natural elements can make your world feel alive. Remember, each tree uses memory!',
-                    structures: 'Building structures? Try to reuse similar shapes to save memory.',
-                    scifi: 'Sci-fi objects are complex. Watch your budget carefully!'
-                };
-                
-                showTutorMessage(hints[category]);
+                // PHASE 1 MVP: Spawn entities via C# Engine
+                if (category === 'nature' && window.CSharpEngine) {
+                    // Spawn a tree at a random position
+                    const x = (Math.random() - 0.5) * 20; // -10 to +10
+                    const z = (Math.random() - 0.5) * 20; // -10 to +10
+                    const entityId = window.CSharpEngine.SpawnEntity('tree_pine', x, 0, z);
+                    
+                    if (entityId >= 0) {
+                        console.log(`🌲 Tree spawned at (${x.toFixed(2)}, 0, ${z.toFixed(2)}) with ID ${entityId}`);
+                        objectCount++;
+                        updateProjectStats();
+                        
+                        // Show success message
+                        showTutorMessage(`Tree spawned! You now have ${window.CSharpEngine.GetEntityCount()} objects. Memory: ${window.CSharpEngine.GetMemoryPercentage().toFixed(1)}%`);
+                    } else {
+                        // Memory limit reached
+                        showTutorMessage('⚠️ Cannot spawn tree - memory limit reached! Try removing some objects first.');
+                    }
+                } else {
+                    // Other categories - just update counter for now
+                    objectCount++;
+                    updateProjectStats();
+                    
+                    // Optional: Show tutor hint
+                    const hints = {
+                        nature: 'Great choice! Natural elements can make your world feel alive. Remember, each tree uses memory!',
+                        structures: 'Building structures? Try to reuse similar shapes to save memory.',
+                        scifi: 'Sci-fi objects are complex. Watch your budget carefully!'
+                    };
+                    
+                    showTutorMessage(hints[category] || 'Object selected!');
+                }
             });
         });
 
