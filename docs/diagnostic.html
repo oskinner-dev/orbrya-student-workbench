@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orbrya Console Error Logger</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1e1e1e; 
+            color: #d4d4d4; 
+            padding: 20px;
+        }
+        #log { 
+            background: #252526; 
+            padding: 20px; 
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error { color: #f48771; }
+        .warn { color: #dcdcaa; }
+        .info { color: #4fc1ff; }
+        .success { color: #4ec9b0; }
+        h1 { color: #569cd6; }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover { background: #1177bb; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Orbrya Error Diagnostic</h1>
+    <div>
+        <button onclick="testEngine()">Test Engine</button>
+        <button onclick="testSpawn()">Test Spawn</button>
+        <button onclick="clearLog()">Clear Log</button>
+        <button onclick="copyLog()">Copy Log</button>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+        
+        function copyLog() {
+            navigator.clipboard.writeText(logDiv.textContent);
+            log('✅ Log copied to clipboard!', 'success');
+        }
+        
+        // Capture all console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log('WARN: ' + args.join(' '), 'warn');
+        };
+        
+        // Capture unhandled errors
+        window.addEventListener('error', (e) => {
+            log(`UNHANDLED ERROR: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`, 'error');
+            log(`Stack: ${e.error?.stack || 'No stack trace'}`, 'error');
+        });
+        
+        // Capture promise rejections
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`UNHANDLED PROMISE REJECTION: ${e.reason}`, 'error');
+        });
+        
+        log('🚀 Diagnostic started', 'success');
+        log('📍 Current URL: ' + window.location.href, 'info');
+        
+        // Test functions
+        async function testEngine() {
+            log('🔄 Testing C# Engine...', 'info');
+            
+            try {
+                // Load main.js as module
+                log('📦 Importing main.js...', 'info');
+                await import('./main.js');
+                
+                // Wait for engine to load
+                log('⏳ Waiting for engine initialization...', 'info');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                if (window.CSharpEngine) {
+                    log('✅ window.CSharpEngine found!', 'success');
+                    log('📦 Available methods: ' + Object.keys(window.CSharpEngine).join(', '), 'info');
+                    
+                    // Test memory functions
+                    try {
+                        const heapKB = window.CSharpEngine.GetManagedHeapKB();
+                        log(`💾 Managed Heap: ${heapKB} KB`, 'success');
+                        
+                        const limit = window.CSharpEngine.GetMemoryLimit();
+                        log(`📊 Memory Limit: ${limit} KB`, 'success');
+                        
+                        const count = window.CSharpEngine.GetEntityCount();
+                        log(`🎮 Entity Count: ${count}`, 'success');
+                    } catch (err) {
+                        log(`❌ Error calling engine methods: ${err.message}`, 'error');
+                        log(`Stack: ${err.stack}`, 'error');
+                    }
+                } else {
+                    log('❌ window.CSharpEngine is undefined!', 'error');
+                    log('Checking window object:', 'info');
+                    log('Available globals: ' + Object.keys(window).filter(k => k.includes('C') || k.includes('Engine') || k.includes('dotnet')).join(', '), 'info');
+                }
+            } catch (err) {
+                log(`❌ Failed to load engine: ${err.message}`, 'error');
+                log(`Stack: ${err.stack}`, 'error');
+            }
+        }
+        
+        function testSpawn() {
+            if (!window.CSharpEngine) {
+                log('❌ Engine not loaded. Run "Test Engine" first.', 'error');
+                return;
+            }
+            
+            try {
+                log('🌲 Spawning tree_pine at (0, 0, 0)...', 'info');
+                const id = window.CSharpEngine.SpawnEntity('tree_pine', 0, 0, 0);
+                log(`✅ Tree spawned with ID: ${id}`, 'success');
+                
+                const count = window.CSharpEngine.GetEntityCount();
+                log(`🎮 Total entities: ${count}`, 'success');
+                
+                const memKB = window.CSharpEngine.GetEntityMemoryCost();
+                log(`💾 Memory used: ${memKB} KB`, 'success');
+            } catch (err) {
+                log(`❌ Spawn failed: ${err.message}`, 'error');
+                log(`Stack: ${err.stack}`, 'error');
+            }
+        }
+        
+        // Auto-run test on load
+        log('⏳ Auto-running engine test in 1 second...', 'info');
+        setTimeout(testEngine, 1000);
+    </script>
+</body>
+</html>

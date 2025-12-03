@@ -11,9 +11,6 @@
     "wasmNative": {
       "dotnet.native.wasm": "sha256-wKcONnmv8uosfGJvhTN6lkcYefp2qcC8uCluDavA92E="
     },
-    "wasmSymbols": {
-      "dotnet.native.js.symbols": "sha256-fa1qytB4hfXSzr8EUiG6x6C41B70TJAvGWPDrRyJC6k="
-    },
     "assembly": {
       "System.Collections.Concurrent.wasm": "sha256-++fpENKKCaWSyBSTayo4KFX2lFBjFm7P19dwZWPWqCk=",
       "System.Console.wasm": "sha256-6ygbBcRnHn1hDFfAvyKDOm39FqzBRVf5GI6xsVb0kMM=",
