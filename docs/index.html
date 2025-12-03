@@ -3104,6 +3104,10 @@
         // Expose UI functions to C# Engine via window.OrbryaUI
         window.OrbryaUI = {
             updateBudget: function(percentage) {
+                // Debug: Log what value we're receiving
+                if (percentage > 10) {
+                    console.warn(`⚠️ Budget bar received suspicious value: ${percentage}% (should be < 2% for small scenes)`);
+                }
                 updateBudget(percentage);
             },
             showTutorMessage: function(message) {
@@ -3111,16 +3115,30 @@
             }
         };
         
-        // Poll C# Engine for memory updates every second
+        // Poll C# Engine for memory updates every second using hybrid calculation
         setInterval(() => {
-            if (window.CSharpEngine && window.CSharpEngine.GetMemoryPercentage) {
-                const memoryPercent = window.CSharpEngine.GetMemoryPercentage();
-                updateBudget(memoryPercent);
+            if (window.CSharpEngine && window.CSharpEngine.GetManagedHeapKB) {
+                // Use hybrid memory calculation (same as main.js updateMemoryBudget)
+                const csharpKB = window.CSharpEngine.GetManagedHeapKB();
+                const entityKB = window.CSharpEngine.GetEntityMemoryCost();
+                
+                // Use max of entity estimate vs actual C# heap
+                const totalKB = Math.max(entityKB, csharpKB);
+                const limitKB = 400 * 1024; // 400MB
+                const percentage = Math.min((totalKB / limitKB) * 100, 100);
+                
+                updateBudget(percentage);
             }
         }, 1000);
         
         console.log('✅ Memory budget bar connected to C# Engine');
         console.log('🌲 Click the Nature button (tree icon) in the left sidebar to spawn trees!');
+        console.log('');
+        console.log('💾 Memory Tracking:');
+        console.log('  - Each tree costs 12KB');
+        console.log('  - Total limit: 400MB (409,600KB)');
+        console.log('  - Expected: ~1.0% for baseline, +0.003% per tree');
+        console.log('  - Budget bar shows: MAX(entity cost, C# heap)');
         console.log('');
         console.log('🎮 Advanced Testing:');
         console.log('  // Spawn tree manually:');
@@ -3130,6 +3148,10 @@
         console.log('  // Remove tree:');
         console.log('  window.CSharpEngine.DestroyEntity(0);');
         console.log('  window.orbryaRenderer.removeEntity(0);');
+        console.log('');
+        console.log('  // Check memory:');
+        console.log('  window.CSharpEngine.GetManagedHeapKB(); // C# heap in KB');
+        console.log('  window.CSharpEngine.GetEntityMemoryCost(); // Entity total in KB');
         console.log('');
 
 

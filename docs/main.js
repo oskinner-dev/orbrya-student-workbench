@@ -55,9 +55,11 @@ export function updateMemoryBudget() {
         window.OrbryaUI.updateBudget(percentage);
     }
     
-    // 8. Debug logging
-    console.log(`💾 Memory: ${totalKB.toLocaleString()}KB / ${limitKB.toLocaleString()}KB (${percentage.toFixed(1)}%)`);
-    console.log(`   └─ C# Heap: ${csharpKB}KB | JS Heap: ${jsKB}KB | GPU: ${gpuKB}KB | Entity Est: ${entityKB}KB`);
+    // 8. Debug logging (only on significant changes or warnings)
+    if (percentage > 5 || entityKB > 1000) {
+        console.log(`💾 Memory: ${totalKB.toLocaleString()}KB / ${limitKB.toLocaleString()}KB (${percentage.toFixed(1)}%)`);
+        console.log(`   └─ C# Heap: ${csharpKB}KB | Entity Cost: ${entityKB}KB`);
+    }
     
     // 9. Warn if approaching limit
     if (percentage > 85 && window.OrbryaUI && window.OrbryaUI.showTutorMessage) {
