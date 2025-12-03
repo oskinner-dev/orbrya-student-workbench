@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orbrya Engine Diagnostic</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .success { color: #0f0; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        pre { background: #000; padding: 10px; border: 1px solid #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Orbrya Engine Diagnostic</h1>
+    <div id="output"></div>
+    
+    <button onclick="testEngine()">Test Engine</button>
+    <button onclick="testSpawn()">Test Spawn</button>
+    <button onclick="testMemory()">Test Memory</button>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        function log(msg, type = 'success') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = msg;
+            output.appendChild(div);
+        }
+        
+        // Capture all console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = (...args) => {
+            originalLog(...args);
+            log('[LOG] ' + args.join(' '), 'success');
+        };
+        
+        console.error = (...args) => {
+            originalError(...args);
+            log('[ERROR] ' + args.join(' '), 'error');
+        };
+        
+        console.warn = (...args) => {
+            originalWarn(...args);
+            log('[WARN] ' + args.join(' '), 'warning');
+        };
+        
+        // Import and test
+        import('./main.js').then(() => {
+            log('✅ main.js imported successfully', 'success');
+            
+            setTimeout(() => {
+                window.testEngine = () => {
+                    log('--- TESTING ENGINE ---', 'success');
+                    
+                    if (typeof window.CSharpEngine === 'undefined') {
+                        log('❌ window.CSharpEngine is undefined!', 'error');
+                        return;
+                    }
+                    
+                    log('✅ window.CSharpEngine exists', 'success');
+                    
+                    try {
+                        const heap = window.CSharpEngine.GetManagedHeapKB();
+                        log(`✅ GetManagedHeapKB() = ${heap}KB`, 'success');
+                        
+                        const limit = window.CSharpEngine.GetMemoryLimit();
+                        log(`✅ GetMemoryLimit() = ${limit}KB`, 'success');
+                        
+                        const entityCost = window.CSharpEngine.GetEntityMemoryCost();
+                        log(`✅ GetEntityMemoryCost() = ${entityCost}KB`, 'success');
+                        
+                        const count = window.CSharpEngine.GetEntityCount();
+                        log(`✅ GetEntityCount() = ${count}`, 'success');
+                    } catch (e) {
+                        log(`❌ Error calling C# methods: ${e.message}`, 'error');
+                    }
+                };
+                
+                window.testSpawn = () => {
+                    log('--- TESTING SPAWN ---', 'success');
+                    
+                    if (!window.CSharpEngine) {
+                        log('❌ Engine not ready', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const id = window.CSharpEngine.SpawnEntity('tree_pine', 0, 0, 0);
+                        log(`✅ SpawnEntity returned ID: ${id}`, id >= 0 ? 'success' : 'error');
+                        
+                        if (id >= 0) {
+                            const count = window.CSharpEngine.GetEntityCount();
+                            log(`✅ Entity count now: ${count}`, 'success');
+                            
+                            const entityCost = window.CSharpEngine.GetEntityMemoryCost();
+                            log(`✅ Entity memory cost: ${entityCost}KB`, 'success');
+                        }
+                    } catch (e) {
+                        log(`❌ Error spawning: ${e.message}`, 'error');
+                    }
+                };
+                
+                window.testMemory = () => {
+                    log('--- TESTING MEMORY ---', 'success');
+                    
+                    if (!window.CSharpEngine) {
+                        log('❌ Engine not ready', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const csharpKB = window.CSharpEngine.GetManagedHeapKB();
+                        const entityKB = window.CSharpEngine.GetEntityMemoryCost();
+                        const totalKB = Math.max(entityKB, csharpKB);
+                        const limitKB = 409600;
+                        const percentage = (totalKB / limitKB) * 100;
+                        
+                        log(`C# Heap: ${csharpKB}KB`, 'success');
+                        log(`Entity Cost: ${entityKB}KB`, 'success');
+                        log(`Total (MAX): ${totalKB}KB`, 'success');
+                        log(`Limit: ${limitKB}KB`, 'success');
+                        log(`Percentage: ${percentage.toFixed(3)}%`, 'success');
+                        log(`Rounded: ${Math.round(percentage)}%`, 'success');
+                    } catch (e) {
+                        log(`❌ Error calculating memory: ${e.message}`, 'error');
+                    }
+                };
+                
+                log('✅ Test functions ready. Click buttons to test!', 'success');
+            }, 3000);
+        }).catch(err => {
+            log('❌ Failed to import main.js: ' + err.message, 'error');
+        });
+    </script>
+</body>
+</html>
