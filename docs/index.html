@@ -245,6 +245,65 @@
         }
 
         /* ============================================
+           FPS COUNTER (TOP RIGHT)
+        ============================================ */
+        #fps-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #4ade80;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            min-width: 100px;
+            text-align: center;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        #fps-counter.good {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.3);
+        }
+
+        #fps-counter.medium {
+            color: #facc15;
+            border-color: rgba(250, 204, 21, 0.3);
+        }
+
+        #fps-counter.bad {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+            animation: pulse-fps 1s infinite;
+        }
+
+        @keyframes pulse-fps {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 6px 24px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        .fps-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 2px;
+        }
+
+        /* ============================================
            ZONE C: THE SOCRATIC TUTOR (BOTTOM RIGHT)
         ============================================ */
         #tutor-container {
@@ -1633,6 +1692,18 @@
                 padding: 12px 16px;
             }
 
+            #fps-counter {
+                top: 10px;
+                right: 10px;
+                padding: 8px 14px;
+                font-size: 16px;
+                min-width: 80px;
+            }
+
+            .fps-label {
+                font-size: 9px;
+            }
+
             #tutor-avatar {
                 width: 60px;
                 height: 60px;
@@ -1784,6 +1855,12 @@
                 <div class="budget-bar-fill" id="budget-bar-fill"></div>
             </div>
             <div class="budget-warning" id="budget-warning"></div>
+        </div>
+
+        <!-- FPS COUNTER (Top Right) -->
+        <div id="fps-counter" class="good">
+            <div id="fps-value">60</div>
+            <div class="fps-label">FPS</div>
         </div>
 
         <!-- ZONE C: THE SOCRATIC TUTOR (Bottom Right) -->
@@ -3519,9 +3596,44 @@
         // Initialize renderer after script loads
         setTimeout(initializeRenderer, 100);
         
+        // FPS Counter tracking
+        let fpsCounter = document.getElementById('fps-counter');
+        let fpsValue = document.getElementById('fps-value');
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+        
+        function updateFPS() {
+            frameCount++;
+            const now = performance.now();
+            const delta = now - lastFrameTime;
+            
+            // Update FPS every 500ms (smooth display)
+            if (delta >= 500) {
+                fps = Math.round((frameCount * 1000) / delta);
+                fpsValue.textContent = fps;
+                
+                // Color coding based on performance
+                fpsCounter.classList.remove('good', 'medium', 'bad');
+                if (fps >= 50) {
+                    fpsCounter.classList.add('good');
+                } else if (fps >= 30) {
+                    fpsCounter.classList.add('medium');
+                } else {
+                    fpsCounter.classList.add('bad');
+                }
+                
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+        }
+        
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
+            
+            // Update FPS counter
+            updateFPS();
             
             // Slow star rotation for ambiance
             stars.rotation.y += 0.0001;
