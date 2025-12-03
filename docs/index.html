@@ -3121,6 +3121,16 @@
         
         console.log('✅ Memory budget bar connected to C# Engine');
         console.log('🌲 Click the Nature button (tree icon) in the left sidebar to spawn trees!');
+        console.log('');
+        console.log('🎮 Advanced Testing:');
+        console.log('  // Spawn tree manually:');
+        console.log('  let id = window.CSharpEngine.SpawnEntity("tree_pine", 5, 0, 5);');
+        console.log('  window.orbryaRenderer.renderEntity(id, "tree_pine", 5, 0, 5);');
+        console.log('');
+        console.log('  // Remove tree:');
+        console.log('  window.CSharpEngine.DestroyEntity(0);');
+        console.log('  window.orbryaRenderer.removeEntity(0);');
+        console.log('');
 
 
         // Simulate adding objects (increases budget by 5-10%)
@@ -3159,6 +3169,14 @@
                     
                     if (entityId >= 0) {
                         console.log(`🌲 Tree spawned at (${x.toFixed(2)}, 0, ${z.toFixed(2)}) with ID ${entityId}`);
+                        
+                        // PHASE 1 DAYS 3-4: Render entity visually
+                        if (window.orbryaRenderer) {
+                            window.orbryaRenderer.renderEntity(entityId, 'tree_pine', x, 0, z);
+                        } else {
+                            console.warn('⚠️ Renderer not ready yet - entity created in memory only');
+                        }
+                        
                         objectCount++;
                         updateProjectStats();
                         
@@ -3475,6 +3493,24 @@
             console.log(`Rotation speed updated: X=${x.toFixed(3)}, Y=${y.toFixed(3)}`);
         };
         
+        // Initialize Three.js Renderer Bridge (Phase 1 Days 3-4)
+        // This will be available after renderer.js loads
+        let orbryaRenderer = null;
+        
+        function initializeRenderer() {
+            if (window.ThreeJSRenderer) {
+                orbryaRenderer = new window.ThreeJSRenderer(scene, camera);
+                window.orbryaRenderer = orbryaRenderer; // Expose globally for C# callbacks
+                console.log('✅ Orbrya Renderer Bridge initialized');
+            } else {
+                console.warn('⚠️ ThreeJSRenderer not loaded yet, retrying...');
+                setTimeout(initializeRenderer, 100);
+            }
+        }
+        
+        // Initialize renderer after script loads
+        setTimeout(initializeRenderer, 100);
+        
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
@@ -3497,6 +3533,9 @@
         animate();
         console.log('✅ Three.js forest scene initialized with Student Workbench UI');
     </script>
+    
+    <!-- Three.js Renderer Bridge -->
+    <script src="./renderer.js"></script>
     
     <!-- C# WASM Backend -->
     <script type="module" src="./main.js"></script>
