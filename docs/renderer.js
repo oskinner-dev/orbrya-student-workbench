@@ -25,7 +25,7 @@ class ThreeJSRenderer {
     initializeAssets() {
         // Create procedural tree geometry
         const treeGeometry = this.createTreeGeometry();
-        const treeMaterial = new THREE.MeshPhongMaterial({ 
+        const treeMaterial = new THREE.MeshLambertMaterial({ 
             color: 0x2d5016,
             flatShading: true 
         });
@@ -45,22 +45,20 @@ class ThreeJSRenderer {
     createTreeGeometry() {
         const group = new THREE.Group();
         
-        // Trunk - more detailed
+        // Trunk - simplified for performance
         const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.5, 8);
-        const trunkMaterial = new THREE.MeshPhongMaterial({ 
+        const trunkMaterial = new THREE.MeshLambertMaterial({ 
             color: 0x4a3728,
-            flatShading: false // Smooth shading for better appearance
+            flatShading: true
         });
         const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
         trunk.position.y = 0.75;
-        trunk.castShadow = true;
-        trunk.receiveShadow = true;
         group.add(trunk);
         
-        // Foliage layers (3 cones) - darker green, more natural
-        const foliageMaterial = new THREE.MeshPhongMaterial({ 
+        // Foliage layers (3 cones) - flat shaded for performance
+        const foliageMaterial = new THREE.MeshLambertMaterial({ 
             color: 0x2d5016,
-            flatShading: false
+            flatShading: true
         });
         
         const foliage1 = new THREE.Mesh(
@@ -68,8 +66,6 @@ class ThreeJSRenderer {
             foliageMaterial
         );
         foliage1.position.y = 1.8;
-        foliage1.castShadow = true;
-        foliage1.receiveShadow = true;
         group.add(foliage1);
         
         const foliage2 = new THREE.Mesh(
@@ -77,8 +73,6 @@ class ThreeJSRenderer {
             foliageMaterial
         );
         foliage2.position.y = 2.4;
-        foliage2.castShadow = true;
-        foliage2.receiveShadow = true;
         group.add(foliage2);
         
         const foliage3 = new THREE.Mesh(
@@ -86,8 +80,6 @@ class ThreeJSRenderer {
             foliageMaterial
         );
         foliage3.position.y = 2.9;
-        foliage3.castShadow = true;
-        foliage3.receiveShadow = true;
         group.add(foliage3);
         
         return group;
@@ -112,14 +104,6 @@ class ThreeJSRenderer {
         // Clone the geometry group
         const mesh = asset.geometry.clone();
         mesh.position.set(x, y, z);
-        
-        // Enable shadows for all children
-        mesh.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
         
         // Add random rotation for variety
         mesh.rotation.y = Math.random() * Math.PI * 2;

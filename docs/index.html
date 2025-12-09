@@ -57,17 +57,13 @@
            GLASSMORPHISM UTILITIES
         ============================================ */
         .glass {
-            background: rgba(26, 26, 46, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(26, 26, 46, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
         .glass-light {
-            background: rgba(26, 26, 46, 0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(26, 26, 46, 0.7);
         }
 
         /* ============================================
@@ -3499,13 +3495,13 @@
         );
         
         const renderer = new THREE.WebGLRenderer({ 
-            antialias: true,
-            alpha: true 
+            antialias: false,
+            alpha: true,
+            powerPreference: 'high-performance'
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.shadowMap.enabled = true; // Enable shadows
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+        renderer.shadowMap.enabled = false;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
         
         // Phase 1 MVP: No background forest (removed to avoid confusion)
@@ -3514,15 +3510,6 @@
         // Lighting - Enhanced for forest scene
         const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
         light1.position.set(10, 10, 5);
-        light1.castShadow = true; // Enable shadow casting
-        light1.shadow.mapSize.width = 2048;
-        light1.shadow.mapSize.height = 2048;
-        light1.shadow.camera.near = 0.5;
-        light1.shadow.camera.far = 50;
-        light1.shadow.camera.left = -20;
-        light1.shadow.camera.right = 20;
-        light1.shadow.camera.top = 20;
-        light1.shadow.camera.bottom = -20;
         scene.add(light1);
         
         const light2 = new THREE.DirectionalLight(0x667eea, 0.4);
